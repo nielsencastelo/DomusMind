@@ -1,0 +1,1 @@
+# comunicação com ollama

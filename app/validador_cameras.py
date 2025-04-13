@@ -1,0 +1,1 @@
+# validação de câmeras

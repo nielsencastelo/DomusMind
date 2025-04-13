@@ -1,0 +1,1 @@
+# leitura e substituição de placeholders de câmeras

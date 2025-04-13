@@ -1,0 +1,1 @@
+{"sala": {"mic_device": 1, "cameras": ["rtsp://usuario:senha@ip:porta/stream"], "mqtt_topic": "casa/sala"}}

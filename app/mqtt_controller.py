@@ -1,0 +1,1 @@
+# publicação no MQTT
