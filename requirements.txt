@@ -1,0 +1,8 @@
+transformers 
+faster-whisper 
+opencv-python 
+ultralytics 
+paho-mqtt
+pandas
+sounddevice
+TTS

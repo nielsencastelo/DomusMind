@@ -1,1 +1,24 @@
-{"sala": {"mic_device": 1, "cameras": ["rtsp://usuario:senha@ip:porta/stream"], "mqtt_topic": "casa/sala"}}
+
+{
+    "quarto": {
+      "mic_device": 1,
+      "cameras": ["rtsp://usuario:senha@ip:porta/stream"],
+      "mqtt_topic": "casa/quarto"
+    },
+    "sala": {
+      "mic_device": 2,
+      "cameras": ["rtsp://usuario:senha@ip:porta/stream"],
+      "mqtt_topic": "casa/sala"
+    },
+    "cozinha": {
+      "mic_device": 3,
+      "cameras": ["rtsp://usuario:senha@ip:porta/stream"],
+      "mqtt_topic": "casa/cozinha"
+    },
+    "escritorio": {
+    "mic_device": 4,
+    "cameras": ["rtsp://usuario:senha@ip:porta/stream", "rtsp://usuario:senha@ip:porta/stream"],
+    "mqtt_topic": "casa/escritorio"
+    }
+}
+  

@@ -1,4 +1,31 @@
 version: '3.8'
+
 services:
+
   ollama:
     image: ollama/ollama
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+    entrypoint: >
+      /bin/bash -c "
+      ollama serve & sleep 5 &&
+      ollama pull llama3 &&
+      tail -f /dev/null
+      "
+
+  mqtt:
+    image: eclipse-mosquitto
+    container_name: mqtt
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+    restart: unless-stopped
+
+volumes:
+  ollama_data:
