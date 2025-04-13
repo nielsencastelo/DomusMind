@@ -1,4 +1,4 @@
-# 🏡 pinica_ia
+# 🏡 Pinica IA
 
 > **Sistema de automação residencial inteligente** com voz, visão computacional e inteligência artificial local.  
 > A casa **ouve, vê, entende e fala com você.**
