@@ -13,3 +13,4 @@ langchain-community
 transformers
 pydub
 playsound
+sounddevice 
