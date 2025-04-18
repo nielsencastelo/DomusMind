@@ -9,11 +9,11 @@
 
 `pinica_ia` é um framework de automação residencial modular que integra:
 
-✅ Captura de áudio via microfones por cômodo  (em desenvolvimento)
-✅ Transcrição de voz com Whisper  (em desenvolvimento)
-✅ Visão computacional com YOLOv8 (OpenCV)  (em desenvolvimento)
-✅ Inteligência artificial com LLaMA3 via [Ollama](https://ollama.com)  (em desenvolvimento)
-✅ Controle de dispositivos via MQTT  (em desenvolvimento)
+✅ Captura de áudio via microfones por cômodo  
+✅ Transcrição de voz com Whisper  
+✅ Visão computacional com YOLOv8 (OpenCV)  
+✅ Inteligência artificial com LLaMA3 via [Ollama](https://ollama.com)  
+✅ Controle de dispositivos via MQTT  
 ✅ Fala em português com voz neural offline (Coqui TTS)  
 ✅ Painel opcional com Streamlit (em desenvolvimento)
 
