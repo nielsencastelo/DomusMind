@@ -10,3 +10,6 @@ langchain
 langchain-core
 langchain-ollama
 langchain-community
+transformers
+pydub
+playsound
