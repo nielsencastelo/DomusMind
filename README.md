@@ -26,7 +26,7 @@
 | 🎤 Captura de voz | Microfones espalhados em cada cômodo escutam comandos ou frases naturais |
 | 👁️ Visão         | Câmeras IP ou locais detectam presença, objetos, pessoas                 |
 | 🧠 LLM            | Um modelo LLaMA3 local interpreta o comando e decide a ação a tomar      |
-| 💬 Voz            | A casa responde com frases naturais em áudio usando Coqui TTS            |
+| 💬 Voz            | A casa responde com frases naturais em áudio usando FacebookS            |
 | 🧭 Controle       | Ações como ligar luz, ar-condicionado, etc., são feitas via MQTT         |
 | 📈 Logs           | Toda fala gerada é salva para auditoria e personalização futura          |
 
@@ -104,9 +104,8 @@ pinica_ia/
 ├── app/
 │   ├── main.py                 # Loop principal por cômodo
 │   ├── room_module.py          # Captura de áudio + visão
-│   ├── llm_agent.py            # Comunicação com Ollama
+│   ├── llm_agent.py            # Comunicação com LLM
 │   ├── mqtt_controller.py      # Publicação no broker
-│   ├── validador_cameras.py    # Validação de câmeras IP
 │   ├── configs/
 │   │   ├── rooms.json
 │   │   └── secrets.json
