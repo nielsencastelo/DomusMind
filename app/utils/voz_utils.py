@@ -18,5 +18,3 @@ def speak_text_with_mms(text):
     print("🔊 Reproduzindo resposta...")
     sd.play(audio, samplerate=model.config.sampling_rate)
     sd.wait()
-
-

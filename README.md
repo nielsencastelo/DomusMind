@@ -12,7 +12,7 @@
 ✅ Captura de áudio via microfones por cômodo  (em desenvolvimento) 
 ✅ Transcrição de voz com Whisper    
 ✅ Visão computacional com YOLOv8 (OpenCV)    
-✅ Inteligência artificial com LLaMA3 via [Ollama](https://ollama.com)    
+✅ Inteligência artificial com LLM via [Ollama](https://ollama.com)    
 ✅ Controle de dispositivos via MQTT (em desenvolvimento)   
 ✅ Fala em português com voz neural offline (Facebook TTS)   
 ✅ Painel opcional com Streamlit (em desenvolvimento)
@@ -113,6 +113,7 @@ pinica_ia/
 │   │   ├── audio_utils.py
 │   │   ├── camera_utils.py
 │   │   ├── llm_utils.py
+│   │   ├── nlp_utils.py
 │   │   ├── vision_utils.py
 │   │   └── voz_utils.py
 │   └── logs/
