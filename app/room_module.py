@@ -2,7 +2,7 @@
 from utils.audio_utils import gravar_audio, salvar_temp_wav
 from utils.vision_utils import detectar_objetos_camera
 from faster_whisper import WhisperModel
-from llm_agent import interpretar_comando
+from app.utils.llm_utils import interpretar_comando
 from mqtt_controller import enviar_acao
 
 model = WhisperModel("base")
