@@ -26,7 +26,7 @@
 | 🎤 Captura de voz | Microfones espalhados em cada cômodo escutam comandos ou frases naturais |
 | 👁️ Visão         | Câmeras IP ou locais detectam presença, objetos, pessoas                 |
 | 🧠 LLM            | Um modelo LLaMA3 local interpreta o comando e decide a ação a tomar      |
-| 💬 Voz            | A casa responde com frases naturais em áudio usando FacebookS            |
+| 💬 Voz            | A casa responde com frases naturais em áudio usando Facebook            |
 | 🧭 Controle       | Ações como ligar luz, ar-condicionado, etc., são feitas via MQTT         |
 | 📈 Logs           | Toda fala gerada é salva para auditoria e personalização futura          |
 
