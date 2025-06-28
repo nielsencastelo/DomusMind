@@ -129,7 +129,7 @@ def main():
             continue
 
         cleaned_input = user_input.strip()
-        print('Informação pra visão: ', vision_desc)
+        print('Informação pra visão: ', cleaned_input)
         # 3. Processamento visual se necessário
         if check_vision_intent(cleaned_input):
             vision_desc = capture_image_and_describe()
