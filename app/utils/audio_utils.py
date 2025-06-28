@@ -10,7 +10,7 @@ import scipy.io.wavfile
 SAMPLE_RATE = 16000
 DURATION = 5
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-print(f"🖥️ Dispositivo para Whisper: {DEVICE}")
+print(f"🖥️ Dispositivo para Transcição: {DEVICE}")
 
 # def capture_audio_and_transcribe():
 #     print("🎙️ Gravando áudio...")
@@ -91,7 +91,14 @@ def capture_audio_and_transcribe_continuous(
         scipy.io.wavfile.write(tmp.name, sample_rate, audio_int16)
         audio_path = tmp.name
 
-    segments, info = model.transcribe(audio_path, language="pt")
+    # segments, info = model.transcribe(audio_path, language="pt")
+    segments, info = model.transcribe(
+        audio_path,
+        language="pt",
+        beam_size=5,
+        best_of=5,
+        vad_filter=True
+    )
     os.remove(audio_path)
 
     transcription = " ".join([seg.text for seg in segments])

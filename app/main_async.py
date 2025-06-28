@@ -52,7 +52,6 @@ async def main_async():
         # 2. Grava comando do usuário
         print("🎙️ Escutando comando...")
         user_input = await asyncio.to_thread(capture_audio_and_transcribe)
-        print(f"📥 Transcrição recebida: {user_input}")
 
         if not user_input or len(user_input.strip()) <= 1:
             print("⚠️ Nenhum comando detectado.")
