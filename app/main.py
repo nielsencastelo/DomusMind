@@ -90,7 +90,7 @@ escolha = 1
 
 def handle_activation_response(wake_input):
     if any(w in wake_input.lower() for w in WAKE_WORDS):
-        saudacao = "Oi, estou aqui Sr. Nielsen."
+        saudacao = "Oi, estou aqui Nielsen."
         print(f"🤖: {saudacao}")
         speak_text_with_mms(saudacao)
         time.sleep(1.5)  # Aguarda a fala terminar antes de começar a gravar o comando
