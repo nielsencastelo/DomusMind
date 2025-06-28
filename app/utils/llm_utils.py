@@ -22,6 +22,7 @@ def ask_llm_ollama(user_query, chat_history, model_name="phi4"):
             - Essa descrição já está filtrada e contém apenas objetos confiáveis, sem repetições ou incertezas.
             - Sua tarefa é interpretar a cena com base nesses objetos e responder à fala do usuário de forma clara, direta e natural.
             - Seja claro, educado e direto.
+            - Respotas curtas.
 
             Comunique-se em português, como se estivesse no mesmo ambiente que o usuário.
             Evite termos técnicos e responda de forma acolhedora, útil e proativa.

@@ -3,7 +3,7 @@
 from difflib import get_close_matches
 
 # Lista de palavras-chave associadas a comandos de visão
-vision_keywords = ["procure", "localize", "onde", "veja", "identifique", "encontre", "visualize", "detectar", "mostre", "observe"]
+vision_keywords = ["procure", "localize", "onde", "veja", "identifique", "encontre", "visualize", "detectar", "mostre", "observe", "camera", "video"]
 WAKE_WORDS = ["coca", "hey coca", "ola coca", "fala coca" "koka", "ola koka", "Boca" "boca", "cuca"]
 
 
