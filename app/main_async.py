@@ -6,9 +6,15 @@ from agents.audio_agent import AudioAgent
 from agents.speech_agent import SpeechAgent
 from agents.vision_agent import VisionAgent
 from agents.llm_agent import LLMAgent
+from agents.search_agent import SearchAgent
 
-from utils.nlp_utils import check_vision_intent, check_wake_word, WAKE_WORDS
-from utils.nlp_utils import check_exit_command
+from utils.nlp_utils import (
+    check_wake_word,
+    check_exit_command,
+    check_vision_intent,
+    check_search_intent,
+    WAKE_WORDS
+)
 from langchain_core.messages import AIMessage, HumanMessage
 
 # Modelos disponíveis e escolha
@@ -23,6 +29,7 @@ audio_agent = AudioAgent()
 speech_agent = SpeechAgent()
 vision_agent = VisionAgent()
 llm_agent = LLMAgent(model_name=modelos_disponiveis[escolha])
+search_agent = SearchAgent()
 
 @lru_cache(maxsize=50)
 def cached_llm_response(prompt: str, model: str):
@@ -67,6 +74,27 @@ async def main_async():
             continue
 
         cleaned_input = user_input.strip()
+
+        if check_search_intent(cleaned_input):
+            print("🌐 Executando busca na web...")
+            search_text, file_path = await asyncio.to_thread(
+                search_agent.search_and_summarize, cleaned_input
+            )
+
+            prompt_busca = (
+                f"O usuário pediu uma busca na internet sobre: '{cleaned_input}'.\n\n"
+                f"Aqui estão os resultados:\n{search_text}\n\n"
+                f"Resuma as informações mais relevantes em até 3 frases curtas e práticas."
+            )
+
+            history.append(HumanMessage(content=prompt_busca))
+            llm_response = await asyncio.to_thread(cached_llm_response, prompt_busca, modelos_disponiveis[escolha])
+            print("🤖 (resumo da busca):", llm_response)
+
+            await asyncio.to_thread(speech_agent.speak, llm_response)
+            history.append(AIMessage(content=llm_response))
+            continue
+
 
         # 3. Visão (se necessário) em paralelo
         if check_vision_intent(cleaned_input):
