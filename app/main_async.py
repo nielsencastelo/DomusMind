@@ -8,6 +8,7 @@ from agents.vision_agent import VisionAgent
 from agents.llm_agent import LLMAgent
 
 from utils.nlp_utils import check_vision_intent, check_wake_word, WAKE_WORDS
+from utils.nlp_utils import check_exit_command
 from langchain_core.messages import AIMessage, HumanMessage
 
 # Modelos disponíveis e escolha
@@ -45,7 +46,7 @@ async def main_async():
             if not wake_input or len(wake_input.strip()) <= 1:
                 continue
 
-            if "sair" in wake_input.lower():
+            if check_exit_command(wake_input):
                 print(wake_input)
                 print("👋 Encerrando assistente.")
                 return

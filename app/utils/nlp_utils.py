@@ -5,6 +5,15 @@ from difflib import get_close_matches
 # Lista de palavras-chave associadas a comandos de visão
 vision_keywords = ["procure", "localize", "onde", "veja", "identifique", "encontre", "visualize", "detectar", "mostre", "observe", "camera", "video"]
 WAKE_WORDS = ["coca", "hey coca", "ola coca", "fala coca" "koka", "ola koka", "Boca" "boca", "cuca"]
+EXIT_WORDS = [
+    "sair", "encerrar", "tchau", "desligar",
+    "fechar", "parar", "até logo", "até mais",
+    "finalizar", "desconectar", "encerrando"
+]
+
+def check_exit_command(text):
+    text_lower = text.lower()
+    return any(palavra in text_lower for palavra in EXIT_WORDS)
 
 
 # Verifica se alguma palavra-chave está no texto
