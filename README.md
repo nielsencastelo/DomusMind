@@ -164,4 +164,4 @@ pinica_ia/
 
 ## 📘 License
 
-MIT © 2025 – Developed by Niels & contributors
+MIT © 2025 – Developed by Nielsen Castelo Damasceno Dantas & contributors
