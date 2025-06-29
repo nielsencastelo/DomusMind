@@ -15,6 +15,7 @@ from utils.nlp_utils import (
     check_search_intent,
     WAKE_WORDS
 )
+
 from langchain_core.messages import AIMessage, HumanMessage
 
 # Modelos disponíveis e escolha
