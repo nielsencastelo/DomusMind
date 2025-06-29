@@ -99,7 +99,7 @@ python app/main_async.py
 ```
 pinica_ia/
 ├── app/
-│   ├── main_async.py            # Async loop using agents
+│   ├── main.py            # Async loop using agents
 │   ├── agents/
 │   │   ├── audio_agent.py       # Audio capture agent
 │   │   ├── vision_agent.py      # Vision scene agent

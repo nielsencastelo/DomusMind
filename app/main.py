@@ -33,7 +33,7 @@ async def handle_activation_response(wake_input: str):
         print(f"🤖: {saudacao}")
         await asyncio.to_thread(speech_agent.speak, saudacao)
 
-async def main_async():
+async def main():
     history = []
 
     while True:
@@ -93,4 +93,4 @@ async def main_async():
 
 # Entry point
 if __name__ == "__main__":
-    asyncio.run(main_async())
+    asyncio.run(main())
