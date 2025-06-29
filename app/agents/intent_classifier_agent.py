@@ -2,15 +2,19 @@
 from utils.llm_utils import model_ollama
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
+from utils.nlp_utils import WAKE_WORDS
+
+wake_words_str = ", ".join(f'"{w}"' for w in WAKE_WORDS)
 
 class IntentClassifierAgent:
     def __init__(self, model_name="phi4"):
         self.model_name = model_name
         self.llm = model_ollama(self.model_name, temperature=0.0)
 
-        self.prompt_template = ChatPromptTemplate.from_template("""
+        self.prompt_template = ChatPromptTemplate.from_template(f"""
 Você é um classificador de intenções para comandos de voz em uma casa inteligente.
-O comando sempre terá o nome do assistente como "coca", "koka", "coka", "kouka" ou variações parecidas.
+Todos os comandos válidos contêm um nome de ativação (wake word) como um dos seguintes:
+{wake_words_str}
 
 Sua tarefa é classificar a **intenção principal** da frase. Responda apenas com uma destas opções:
 - "visao" → se o comando for sobre ver, detectar, checar câmeras, contar pessoas, observar ambiente.

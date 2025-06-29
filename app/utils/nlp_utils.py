@@ -9,7 +9,7 @@
 #     "visualize", "detectar", "mostre", "observe", "camera", "vídeo", "quantas pessoas", "quem está", "o que tem"
 # ]
 
-# WAKE_WORDS = ["coca", "hey coca", "ola coca", "fala coca" "koka", "ola koka", "Boca" "boca", "cuca"]
+WAKE_WORDS = ["coca", "hey coca", "ola coca", "fala coca" "koka", "ola koka", "Boca" "boca", "cuca"]
 
 # EXIT_WORDS = [
 #     "sair", "encerrar", "tchau", "desligar",
