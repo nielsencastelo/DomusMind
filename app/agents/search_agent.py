@@ -1,3 +1,4 @@
+from utils.search_util import realizar_busca_web
 from duckduckgo_search import DDGS
 
 class SearchAgent:
@@ -18,5 +19,11 @@ class SearchAgent:
                 })
         except Exception as e:
             results.append({"error": str(e)})
-
         return results
+
+    def search_and_summarize(self, query: str):
+        """
+        Executa a busca, salva os resultados e retorna um resumo textual + caminho do arquivo salvo.
+        """
+        resumo, path = realizar_busca_web(query)
+        return resumo, path

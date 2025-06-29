@@ -1,51 +1,20 @@
-
 import torch
 import sounddevice as sd
 import numpy as np
 from faster_whisper import WhisperModel
-import tempfile
 import os
 import scipy.io.wavfile
+from datetime import datetime
 
 SAMPLE_RATE = 16000
-DURATION = 5
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-print(f"🖥️ Dispositivo para Transcição: {DEVICE}")
-
-# def capture_audio_and_transcribe():
-#     print("🎙️ Gravando áudio...")
-#     audio = sd.rec(int(DURATION * SAMPLE_RATE), samplerate=SAMPLE_RATE, channels=1, dtype='float32')
-#     sd.wait()
-#     print("✅ Gravação concluída.")
-
-#     audio = np.squeeze(audio)
-#     audio = np.clip(audio, -1.0, 1.0)
-#     audio_int16 = (audio * 32767).astype(np.int16)
-
-#     with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
-#         scipy.io.wavfile.write(tmp.name, SAMPLE_RATE, audio_int16)
-#         audio_path = tmp.name
-
-#     model = WhisperModel("medium", compute_type="float32", device=DEVICE)
-#     segments, info = model.transcribe(audio_path, language="pt")
-    
-#     # os.remove(audio_path)
-#     if transcription.strip():
-#         os.remove(audio_path)
-#     else:
-#         print(f"💾 Áudio salvo para debug: {audio_path}")
-
-
-#     transcription = " ".join([seg.text for seg in segments])
-#     print(f"📝 Transcrição: {transcription}")
-#     return transcription.strip()
-
+print(f"🖥️ Lendo Model de Transcrição: {DEVICE}")
 
 def capture_audio_and_transcribe_continuous(
     sample_rate=16000,        # taxa de amostragem do áudio (Hz)
-    max_duration=15,          # duração máxima da gravação (segundos)
-    silence_duration=1.5,     # quanto tempo de silêncio para parar (segundos)
-    threshold=0.005             # limiar de volume para considerar silêncio
+    max_duration=30,          # duração máxima da gravação (segundos)
+    silence_duration=2,       # quanto tempo de silêncio para parar (segundos)
+    threshold=0.005           # limiar de volume para considerar silêncio
 ):
     print("🎧 Aguardando início da fala...")
 
@@ -83,15 +52,23 @@ def capture_audio_and_transcribe_continuous(
         print("🕐 Nenhuma fala detectada.")
         return ""
 
+    # junta todos os chunks
     audio = np.concatenate(buffer)
     audio = np.clip(audio, -1.0, 1.0)
     audio_int16 = (audio * 32767).astype(np.int16)
 
-    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
-        scipy.io.wavfile.write(tmp.name, sample_rate, audio_int16)
-        audio_path = tmp.name
+    # cria diretório recordings/ se não existir
+    save_dir = "recordings"
+    os.makedirs(save_dir, exist_ok=True)
 
-    # segments, info = model.transcribe(audio_path, language="pt")
+    # salva com nome timestampado
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    audio_path = os.path.join(save_dir, f"recording_{timestamp}.wav")
+    scipy.io.wavfile.write(audio_path, sample_rate, audio_int16)
+
+    print(f"💾 Áudio salvo em: {audio_path}")
+
+    # transcreve o áudio com Whisper
     segments, info = model.transcribe(
         audio_path,
         language="pt",
@@ -99,9 +76,7 @@ def capture_audio_and_transcribe_continuous(
         best_of=5,
         vad_filter=True
     )
-    os.remove(audio_path)
 
     transcription = " ".join([seg.text for seg in segments])
     print(f"📝 Transcrição: {transcription}")
-    return transcription.strip()
-
+    return transcription
