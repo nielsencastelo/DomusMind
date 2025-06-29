@@ -1,29 +1,37 @@
 import asyncio
-import time
 from functools import lru_cache
 from concurrent.futures import ThreadPoolExecutor
 
-from utils.audio_utils import capture_audio_and_transcribe_continuous as capture_audio_and_transcribe
-from utils.voz_utils import speak_text_with_mms
-from utils.vision_utils import capture_image_and_describe
-from utils.llm_utils import ask_llm_ollama
+from agents.audio_agent import AudioAgent
+from agents.speech_agent import SpeechAgent
+from agents.vision_agent import VisionAgent
+from agents.llm_agent import LLMAgent
+
 from utils.nlp_utils import check_vision_intent, check_wake_word, WAKE_WORDS
 from langchain_core.messages import AIMessage, HumanMessage
 
+# Modelos disponíveis e escolha
 modelos_disponiveis = ["Llama 3.2", "phi4", "gemma3:27b"]
-escolha = 1
+escolha = 1  # índice do modelo selecionado
+
+# Executor para threads (opcional, pois asyncio.to_thread já abstrai isso)
 executor = ThreadPoolExecutor(max_workers=4)
+
+# Instanciação dos agentes
+audio_agent = AudioAgent()
+speech_agent = SpeechAgent()
+vision_agent = VisionAgent()
+llm_agent = LLMAgent(model_name=modelos_disponiveis[escolha])
 
 @lru_cache(maxsize=50)
 def cached_llm_response(prompt: str, model: str):
-    return ask_llm_ollama(prompt, [], model)
+    return llm_agent.ask(prompt, [])
 
 async def handle_activation_response(wake_input: str):
     if any(w in wake_input.lower() for w in WAKE_WORDS):
         saudacao = "Oi, estou aqui Nielsen."
         print(f"🤖: {saudacao}")
-        await asyncio.to_thread(speak_text_with_mms, saudacao)
-        # Aguarda a fala ser concluída naturalmente
+        await asyncio.to_thread(speech_agent.speak, saudacao)
 
 async def main_async():
     history = []
@@ -33,7 +41,7 @@ async def main_async():
 
         # 1. Espera wake word
         while True:
-            wake_input = await asyncio.to_thread(capture_audio_and_transcribe)
+            wake_input = await asyncio.to_thread(audio_agent.listen_and_transcribe)
             if not wake_input or len(wake_input.strip()) <= 1:
                 continue
 
@@ -51,7 +59,7 @@ async def main_async():
 
         # 2. Grava comando do usuário
         print("🎙️ Escutando comando...")
-        user_input = await asyncio.to_thread(capture_audio_and_transcribe)
+        user_input = await asyncio.to_thread(audio_agent.listen_and_transcribe)
 
         if not user_input or len(user_input.strip()) <= 1:
             print("⚠️ Nenhum comando detectado.")
@@ -62,7 +70,7 @@ async def main_async():
         # 3. Visão (se necessário) em paralelo
         if check_vision_intent(cleaned_input):
             print("🧠 Visão necessária. Capturando imagem...")
-            vision_desc = await asyncio.to_thread(capture_image_and_describe)
+            vision_desc = await asyncio.to_thread(vision_agent.capture_and_describe)
             print('📸 Descrição visão:', vision_desc)
             full_prompt = f"{cleaned_input}\nVisão: {vision_desc}"
         else:
@@ -77,7 +85,7 @@ async def main_async():
         print("🤖:", llm_response)
 
         # 5. Fala a resposta do LLM
-        await asyncio.to_thread(speak_text_with_mms, llm_response)
+        await asyncio.to_thread(speech_agent.speak, llm_response)
 
         # 6. Atualiza histórico
         history.append(HumanMessage(content=cleaned_input))
