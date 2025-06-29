@@ -11,7 +11,7 @@
 
 - 🎙️ Real-time speech transcription with Whisper
 - 👁️ Vision detection using YOLOv8 (via OpenCV)
-- 🧠 Local LLM-based reasoning using Ollama + LLaMA3
+- 🧠 Local LLM-based reasoning using Ollama + Phi-4
 - 🗣️ Natural speech responses using Facebook MMS-TTS
 - 🌐 Web search agent via DuckDuckGo
 - 💡 Device control via MQTT (in development)
@@ -27,16 +27,16 @@ Each function is encapsulated as an **independent agent**, orchestrated asynchro
 [🎙️ AudioAgent] → Captures & transcribes speech
          │
          ▼
-[🧠 LLM Planner] (optional)
+[🧠 IntentClassifierAgent] → Detects wake word + classifies intent
          │
- ┌───────┴───────────────────┐
- ▼                           ▼
+ ┌───────┴────────────────────┐
+ ▼                            ▼
 [👁️ VisionAgent]       [🌐 SearchAgent]
-         │                    │
-         ▼                    ▼
+         │                     │
+         ▼                     ▼
      Scene summary        Web search results
-         │                    │
-         └──────┬─────────────┘
+         │                     │
+         └──────┬──────────────┘
                 ▼
            [🧠 LLMAgent] → Generates response
                 │
@@ -48,14 +48,15 @@ Each function is encapsulated as an **independent agent**, orchestrated asynchro
 
 ## 📦 Core Components
 
-| Agent/Class        | Description                                                                 |
-|--------------------|-----------------------------------------------------------------------------|
-| `AudioAgent`       | Captures microphone audio and transcribes using Whisper                    |
-| `VisionAgent`      | Detects people/objects via camera and describes scene with YOLOv8          |
-| `LLMAgent`         | Handles user interaction via prompt + context using Ollama (LLaMA3, etc.) |
-| `SpeechAgent`      | Converts response text into audio using Facebook MMS-TTS                   |
-| `SearchAgent`      | Searches the internet with DuckDuckGo and returns structured results       |
-| `main_async.py`    | Async orchestration and command pipeline                                   |
+| Agent/Class            | Description                                                                 |
+|------------------------|-----------------------------------------------------------------------------|
+| `AudioAgent`           | Captures microphone audio and transcribes using Whisper                    |
+| `VisionAgent`          | Detects people/objects via camera and describes scene with YOLOv8          |
+| `LLMAgent`             | Handles user interaction via prompt + context using Ollama (Phi-4, etc.)   |
+| `SpeechAgent`          | Converts response text into audio using Facebook MMS-TTS                   |
+| `SearchAgent`          | Searches the internet with DuckDuckGo and returns structured results       |
+| `IntentClassifierAgent`| Uses a local LLM to detect if input has "coca" and which action to perform |
+| `main_async.py`        | Async orchestration and command pipeline                                   |
 
 ---
 
@@ -104,67 +105,63 @@ python app/main_async.py
 
 ---
 
+## 🗣️ Example Spoken Commands
+
+| Transcription Example                              | Resulting Action                                           |
+|----------------------------------------------------|------------------------------------------------------------|
+| “Coca, what's in the camera?”                      | VisionAgent runs, takes image, describes people/scene      |
+| “Hey Koka, search the internet for NCDD company”   | DuckDuckGo search executed + summary spoken                |
+| “Finalize assistant, Coca”                         | Assistant shuts down gracefully                           |
+
+---
+
 ## 📂 Project Structure
 
 ```
 pinica_ia/
 ├── app/
-│   ├── main_async.py            # Async orchestrator
+│   ├── main_async.py
 │   ├── agents/
-│   │   ├── audio_agent.py       # Audio input + Whisper
-│   │   ├── vision_agent.py      # Scene understanding
-│   │   ├── search_agent.py      # DuckDuckGo web search
-│   │   ├── llm_agent.py         # Language model interaction
-│   │   └── speech_agent.py      # Text-to-speech output
+│   │   ├── audio_agent.py
+│   │   ├── vision_agent.py
+│   │   ├── search_agent.py
+│   │   ├── llm_agent.py
+│   │   ├── speech_agent.py
+│   │   └── intent_classifier_agent.py
 │   ├── utils/
 │   │   ├── vision_utils.py
 │   │   ├── audio_utils.py
 │   │   ├── search_util.py
-│   │   └── nlp_utils.py         # Wake word, intent classification
+│   │   └── llm_utils.py
 │   ├── configs/
 │   │   ├── rooms.json
 │   │   └── secrets.json
-│   └── search_logs/             # Saved search sessions
-├── notebooks/                   # Test notebooks per agent
-│   ├── Internet.ipynb
-│   ├── Audio.ipynb
-│   ├── LLM.ipynb
-│   └── ...
+│   └── search_logs/
+├── notebooks/
 ├── docker-compose.yml
 └── requirements.txt
 ```
 
 ---
 
-## 💬 Example Commands
+## 🔐 Privacy & Wake Word
 
-| Spoken Command                           | What Happens                                              |
-|------------------------------------------|-----------------------------------------------------------|
-| “Estou indo dormir”                      | Turns off lights, closes curtains                         |
-| “Tem alguém na porta?”                   | Captures image, detects people, describes via LLM         |
-| “Qual a temperatura na cozinha?”         | Reads sensors and responds                                |
-| “Pesquise na internet sobre IA médica”  | Uses DuckDuckGo, saves results, and summarizes response   |
+- Assistant only responds if a variation of “coca” is heard (e.g., “koka”, “coka”, “kouka”).
+- All processing is done locally unless a web search is required.
+- Searches and audio logs are saved in separate folders for auditability.
 
 ---
 
-## 🔐 Security and Privacy
+## 🧠 Powered By
 
-- Fully offline capability (LLM, TTS, Vision, Audio)
-- Internet search is optional and saved separately
-- Credentials are stored securely in `secrets.json`
-
----
-
-## 💡 Credits & Inspiration
-
-Inspired by:
-- JARVIS (Iron Man)
-- Home Assistant & ESPHome
-- Ollama + DuckDuckGo
-- The dream of a truly intelligent, offline-capable, human-friendly home.
+- [Whisper](https://github.com/openai/whisper)
+- [Ollama](https://ollama.com/)
+- [YOLOv8](https://github.com/ultralytics/ultralytics)
+- [DuckDuckGo Search API](https://duckduckgo.com)
+- [MMS-TTS](https://github.com/facebookresearch/fairseq/tree/main/examples/mms)
 
 ---
 
 ## 📘 License
 
-MIT © 2025 – Developed by Niels & collaborators
+MIT © 2025 – Developed by Niels & contributors

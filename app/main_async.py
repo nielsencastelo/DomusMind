@@ -42,11 +42,11 @@ async def main_async():
         cleaned_input = user_input.strip()
         print(f"📝 Comando com 'coca' detectado: {cleaned_input}")
 
-        # Remove a palavra 'coca' para análise da ação
-        command_text = cleaned_input.lower().replace("coca", "").strip()
+        intent = await asyncio.to_thread(intent_agent.classify, user_input)
 
-        # Intenção via LLM com baixa temperatura
-        intent = await asyncio.to_thread(intent_agent.classify, command_text)
+        if intent == "ignorar":
+            print("🔇 Nenhuma wake word detectada. Ignorando comando.")
+            continue
 
         if intent == "sair":
             saudacao = "Oi Nielsen, encerrando o programa."
@@ -61,11 +61,11 @@ async def main_async():
 
             print("🌐 Executando busca na web...")
             search_text, file_path = await asyncio.to_thread(
-                search_agent.search_and_summarize, command_text
+                search_agent.search_and_summarize, cleaned_input
             )
 
             prompt_busca = (
-                f"O usuário pediu uma busca na internet sobre: '{command_text}'.\n\n"
+                f"O usuário pediu uma busca na internet sobre: '{cleaned_input}'.\n\n"
                 f"Aqui estão os resultados:\n{search_text}\n\n"
                 f"Resuma as informações mais relevantes em até 3 frases curtas e práticas."
             )
@@ -87,10 +87,10 @@ async def main_async():
 
             vision_desc = await asyncio.to_thread(vision_agent.capture_and_describe)
             print('📸 Descrição visão:', vision_desc)
-            full_prompt = f"{command_text}\nVisão: {vision_desc}"
+            full_prompt = f"{cleaned_input}\nVisão: {vision_desc}"
 
         else:
-            full_prompt = command_text
+            full_prompt = cleaned_input
             saudacao = "Oi Nielsen, vou processar sua solicitação."
             await asyncio.to_thread(speech_agent.speak, saudacao)
 

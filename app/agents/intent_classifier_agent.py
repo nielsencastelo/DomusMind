@@ -6,20 +6,37 @@ from langchain_core.output_parsers import StrOutputParser
 class IntentClassifierAgent:
     def __init__(self, model_name="phi4"):
         self.model_name = model_name
-        self.llm = model_ollama(self.model_name, temperature=0.0)  # baixa temperatura para respostas determinísticas
+        self.llm = model_ollama(self.model_name, temperature=0.0)
 
         self.prompt_template = ChatPromptTemplate.from_template("""
-Você é um classificador de intenções de comandos de voz para uma casa inteligente. 
-Dado um texto de transcrição, classifique a intenção principal entre as seguintes opções:
+Você é um classificador de intenções para comandos de voz em uma casa inteligente.
+O comando sempre terá o nome do assistente como "coca", "koka", "coka", "kouka" ou variações parecidas.
 
-- "visao" → se for algo relacionado a ver, detectar, observar câmeras ou pessoas
-- "pesquisa" → se for algo relacionado a buscar ou pesquisar na internet
-- "sair" → se for algo como "encerrar", "tchau", "desligar", "até mais"
-- "outro" → se não corresponder a nenhuma das intenções acima
+Sua tarefa é classificar a **intenção principal** da frase. Responda apenas com uma destas opções:
+- "visao" → se o comando for sobre ver, detectar, checar câmeras, contar pessoas, observar ambiente.
+- "pesquisa" → se for sobre pesquisar algo na internet, entender um conceito, buscar informações.
+- "sair" → apenas se for claramente para encerrar o programa, desligar o assistente ou parar o sistema.
+- "outro" → qualquer outro comando que não se encaixe nos anteriores.
+
+❗️Importante: só classifique como "sair" se o comando for claro e direto como:
+- "coca, finalize o programa"
+- "koka, encerre o assistente"
+- "coca, desligue o sistema"
+- "pare tudo agora"
+- "encerre imediatamente"
+
+❌ NÃO considere frases como "valeu", "tchau", "até mais" como sair. Classifique isso como "outro".
+
+Exemplos:
+1. "kouka, veja quem está na porta" → visao
+2. "koka, o que é aprendizado de máquina?" → pesquisa
+3. "cuca, finalize o programa agora" → sair
+4. "boca, desligue todas as luzes da casa" → outro
+5. "coca, tchau por hoje" → outro
 
 Transcrição: "{input}"
 
-Responda apenas com uma das palavras: visao, pesquisa, sair, outro.
+Responda apenas com: visao, pesquisa, sair ou outro.
         """)
 
         self.chain = self.prompt_template | self.llm | StrOutputParser()
