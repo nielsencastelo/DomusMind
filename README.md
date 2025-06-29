@@ -1,55 +1,65 @@
-# 🏡 Pinica IA – Intelligent Home Automation with Agents
+# 🏡 Pinica IA – Intelligent Home Assistant with Modular Agents
 
-> **Agent-based smart home system** using voice, computer vision, and local LLMs.  
-> Your house **listens, sees, understands, and talks to you** – intelligently.
+> **Local-first smart home system** with voice, vision, and language intelligence.  
+> Your house **listens, sees, understands, speaks, and searches for you.**
 
 ---
 
 ## ✨ Overview
 
-`pinica_ia` is a modular agent-based automation framework that integrates:
+`pinica_ia` is a modular and agent-based home automation framework that integrates:
 
-- 🎙️ Audio capture and speech recognition using Whisper
-- 👁️ Vision-based scene detection using YOLOv8 (via OpenCV)
-- 🧠 Natural language understanding and reasoning using Ollama + LLaMA3
-- 🗣️ Natural voice responses using Facebook MMS-TTS
-- 💡 MQTT-based device control (in development)
-- 📊 Optional Streamlit dashboard (in development)
+- 🎙️ Real-time speech transcription with Whisper
+- 👁️ Vision detection using YOLOv8 (via OpenCV)
+- 🧠 Local LLM-based reasoning using Ollama + LLaMA3
+- 🗣️ Natural speech responses using Facebook MMS-TTS
+- 🌐 Web search agent via DuckDuckGo
+- 💡 Device control via MQTT (in development)
+- 📊 Optional UI with Streamlit (in development)
 
 ---
 
 ## 🧠 Agent Architecture
 
-Each key function is encapsulated as an **agent**, allowing for modular orchestration:
+Each function is encapsulated as an **independent agent**, orchestrated asynchronously:
 
 ```
-[🎙️ AudioAgent] → Transcribe speech
-        │
-        ▼
-[🧠 LLM PlannerAgent (optional)] → Plan actions
-        │
-        ├─▶ [👁️ VisionAgent] (if vision is needed)
-        └─▶ [🧠 LLMAgent] → Generate response
-                          │
-                          ▼
-                   [🗣️ SpeechAgent]
+[🎙️ AudioAgent] → Captures & transcribes speech
+         │
+         ▼
+[🧠 LLM Planner] (optional)
+         │
+ ┌───────┴───────────────────┐
+ ▼                           ▼
+[👁️ VisionAgent]       [🌐 SearchAgent]
+         │                    │
+         ▼                    ▼
+     Scene summary        Web search results
+         │                    │
+         └──────┬─────────────┘
+                ▼
+           [🧠 LLMAgent] → Generates response
+                │
+                ▼
+          [🗣️ SpeechAgent] → Speaks back
 ```
 
 ---
 
-## 📦 Key Components
+## 📦 Core Components
 
-| Agent/Class       | Description                                                      |
-|-------------------|------------------------------------------------------------------|
-| `AudioAgent`      | Captures user speech and transcribes using Whisper              |
-| `VisionAgent`     | Detects and describes scene objects using YOLOv8                |
-| `LLMAgent`        | Sends text (and context) to Ollama LLM and returns responses    |
-| `SpeechAgent`     | Converts LLM responses into voice using MMS-TTS                 |
-| `main_async.py`   | Orchestrates agent interaction via asyncio loop                 |
+| Agent/Class        | Description                                                                 |
+|--------------------|-----------------------------------------------------------------------------|
+| `AudioAgent`       | Captures microphone audio and transcribes using Whisper                    |
+| `VisionAgent`      | Detects people/objects via camera and describes scene with YOLOv8          |
+| `LLMAgent`         | Handles user interaction via prompt + context using Ollama (LLaMA3, etc.) |
+| `SpeechAgent`      | Converts response text into audio using Facebook MMS-TTS                   |
+| `SearchAgent`      | Searches the internet with DuckDuckGo and returns structured results       |
+| `main_async.py`    | Async orchestration and command pipeline                                   |
 
 ---
 
-## 🚀 How to Run
+## 🚀 Getting Started
 
 ### 1. Clone the repository
 
@@ -58,19 +68,19 @@ git clone https://github.com/yourname/pinica_ia.git
 cd pinica_ia
 ```
 
-### 2. Install dependencies
+### 2. Install requirements
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3. Start services with Docker
+### 3. Start support services (if using Docker)
 
 ```bash
 docker-compose up -d
 ```
 
-### 4. Configure rooms and camera access
+### 4. Configure your environment
 
 Edit `configs/rooms.json`:
 
@@ -84,9 +94,9 @@ Edit `configs/rooms.json`:
 }
 ```
 
-Edit `configs/secrets.json` with your camera credentials.
+And update `configs/secrets.json` with your credentials.
 
-### 5. Run the assistant with agents
+### 5. Run the assistant
 
 ```bash
 python app/main_async.py
@@ -94,46 +104,67 @@ python app/main_async.py
 
 ---
 
-## 📂 Project Structure (after agent refactor)
+## 📂 Project Structure
 
 ```
 pinica_ia/
 ├── app/
-│   ├── main.py            # Async loop using agents
+│   ├── main_async.py            # Async orchestrator
 │   ├── agents/
-│   │   ├── audio_agent.py       # Audio capture agent
-│   │   ├── vision_agent.py      # Vision scene agent
-│   │   ├── llm_agent.py         # LLM query agent
-│   │   └── speech_agent.py      # Text-to-speech agent
-│   ├── utils/                   # Whisper, YOLO, TTS helpers
+│   │   ├── audio_agent.py       # Audio input + Whisper
+│   │   ├── vision_agent.py      # Scene understanding
+│   │   ├── search_agent.py      # DuckDuckGo web search
+│   │   ├── llm_agent.py         # Language model interaction
+│   │   └── speech_agent.py      # Text-to-speech output
+│   ├── utils/
+│   │   ├── vision_utils.py
+│   │   ├── audio_utils.py
+│   │   ├── search_util.py
+│   │   └── nlp_utils.py         # Wake word, intent classification
 │   ├── configs/
 │   │   ├── rooms.json
 │   │   └── secrets.json
-│   └── logs/
-│       └── llm_speech.log       # Log of spoken outputs
+│   └── search_logs/             # Saved search sessions
+├── notebooks/                   # Test notebooks per agent
+│   ├── Internet.ipynb
+│   ├── Audio.ipynb
+│   ├── LLM.ipynb
+│   └── ...
 ├── docker-compose.yml
-└── mosquitto.conf
+└── requirements.txt
 ```
 
 ---
 
 ## 💬 Example Commands
 
-- "Está muito calor aqui" → Turns on the air conditioning  
-- "Estou indo dormir" → Turns off lights and closes curtains  
-- "Tem alguém na porta?" → Uses camera to check and respond  
-- "Qual a temperatura na cozinha?" → Reads sensors and answers  
+| Spoken Command                           | What Happens                                              |
+|------------------------------------------|-----------------------------------------------------------|
+| “Estou indo dormir”                      | Turns off lights, closes curtains                         |
+| “Tem alguém na porta?”                   | Captures image, detects people, describes via LLM         |
+| “Qual a temperatura na cozinha?”         | Reads sensors and responds                                |
+| “Pesquise na internet sobre IA médica”  | Uses DuckDuckGo, saves results, and summarizes response   |
 
 ---
 
-## 🔐 Security
+## 🔐 Security and Privacy
 
-- Fully offline capable: LLM and TTS run locally  
-- Camera credentials are isolated in `secrets.json`  
-- Future support for encryption and command authentication  
+- Fully offline capability (LLM, TTS, Vision, Audio)
+- Internet search is optional and saved separately
+- Credentials are stored securely in `secrets.json`
 
 ---
 
 ## 💡 Credits & Inspiration
 
-Inspired by JARVIS (Iron Man), Home Assistant, ESPHome, Ollama, and the dream of a **talking intelligent home**.
+Inspired by:
+- JARVIS (Iron Man)
+- Home Assistant & ESPHome
+- Ollama + DuckDuckGo
+- The dream of a truly intelligent, offline-capable, human-friendly home.
+
+---
+
+## 📘 License
+
+MIT © 2025 – Developed by Niels & collaborators
