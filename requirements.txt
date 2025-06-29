@@ -14,3 +14,4 @@ transformers
 pydub
 playsound
 sounddevice 
+duckduckgo-search
