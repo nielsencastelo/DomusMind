@@ -1,50 +1,50 @@
 # 🏡 Pinica IA
 
-> **Sistema de automação residencial inteligente** com voz, visão computacional e inteligência artificial local.  
-> A casa **ouve, vê, entende e fala com você.**
+> **Smart home automation system** with voice, computer vision, and local artificial intelligence.  
+> The house **listens, sees, understands, and talks to you.**
 
 ---
 
-## ✨ Visão Geral
+## ✨ Overview
 
-`pinica_ia` é um framework de automação residencial modular que integra:
+`pinica_ia` is a modular home automation framework that integrates:
 
-- Captura de áudio via microfones por cômodo  (em desenvolvimento)
-- Transcrição de voz com Whisper    
-- Visão computacional com YOLOv8 (OpenCV)    
-- Inteligência artificial com LLM via [Ollama](https://ollama.com)
-- Controle de dispositivos via MQTT (em desenvolvimento)   
-- Fala em português com voz neural offline (Facebook TTS)   
-- Painel opcional com Streamlit (em desenvolvimento)
-
----
-
-## 📦 Funcionalidades
-
-| Componente        | Descrição                                                                 |
-|-------------------|---------------------------------------------------------------------------|
-| 🎤 Captura de voz | Microfones espalhados em cada cômodo escutam comandos ou frases naturais |
-| 👁️ Visão         | Câmeras IP ou locais detectam presença, objetos, pessoas                 |
-| 🧠 LLM            | Um modelo LLaMA3 local interpreta o comando e decide a ação a tomar      |
-| 💬 Voz            | A casa responde com frases naturais em áudio usando Facebook            |
-| 🧭 Controle       | Ações como ligar luz, ar-condicionado, etc., são feitas via MQTT         |
-| 📈 Logs           | Toda fala gerada é salva para auditoria e personalização futura          |
+- Audio capture via room-specific microphones (in development)  
+- Voice transcription using Whisper  
+- Computer vision with YOLOv8 (OpenCV)  
+- Artificial intelligence via LLMs using [Ollama](https://ollama.com)  
+- Device control via MQTT (in development)  
+- Offline neural voice in Portuguese (Facebook TTS)  
+- Optional control panel using Streamlit (in development)
 
 ---
 
-## 🛠️ Arquitetura
+## 📦 Features
+
+| Component         | Description                                                                 |
+|-------------------|-----------------------------------------------------------------------------|
+| 🎤 Voice Capture  | Microphones spread across rooms listen for commands or natural phrases      |
+| 👁️ Vision         | IP or local cameras detect presence, objects, people                        |
+| 🧠 LLM             | A local LLaMA3 model interprets the command and decides what to do         |
+| 💬 Voice           | The house responds in natural spoken language using Facebook TTS            |
+| 🧭 Control         | Actions like turning on lights, AC, etc., are handled via MQTT              |
+| 📈 Logs            | All generated speech is saved for auditing and future customization         |
+
+---
+
+## 🛠️ Architecture
 
 ```
-[Câmera IP / Webcam]       [Microfone]
-         │                     │
-         ▼                     ▼
-   [YOLOv8 - OpenCV]     [Whisper - Faster]
-         └──────┐        ┌──────┘
-                ▼        ▼
-             [ LLM (LLaMA3 via Ollama) ]
+[IP Camera / Webcam]         [Microphone]
+         │                         │
+         ▼                         ▼
+   [YOLOv8 - OpenCV]        [Whisper - Faster]
+         └──────┐              ┌──────┘
+                ▼              ▼
+         [ LLM (LLaMA3 via Ollama) ]
                         │
                         ▼
-        [Texto] → [Coqui TTS] → [Caixa de som]
+        [Text] → [Coqui TTS] → [Speaker]
                         │
                         ▼
                   [MQTT Publisher]
@@ -52,44 +52,44 @@
 
 ---
 
-## 🚀 Como executar
+## 🚀 How to Run
 
-### 1. Clone o projeto
+### 1. Clone the project
 
 ```bash
-git clone https://github.com/seunome/pinica_ia.git
+git clone https://github.com/yourname/pinica_ia.git
 cd pinica_ia
 ```
 
-### 2. Instale as dependências
+### 2. Install the dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3. Suba os serviços com Docker
+### 3. Start the services with Docker
 
 ```bash
 docker-compose up -d
 ```
 
-### 4. Configure seus cômodos e câmeras
+### 4. Configure your rooms and cameras
 
-Edite o arquivo `configs/rooms.json`:
+Edit the file `configs/rooms.json`:
 
 ```json
 {
-  "sala": {
+  "living_room": {
     "mic_device": 1,
-    "cameras": ["rtsp://usuario:senha@192.168.1.10:554/stream1"],
-    "mqtt_topic": "casa/sala"
+    "cameras": ["rtsp://user:password@192.168.1.10:554/stream1"],
+    "mqtt_topic": "home/living_room"
   }
 }
 ```
 
-Edite `configs/secrets.json` com suas credenciais das câmeras.
+Edit `configs/secrets.json` with your camera credentials.
 
-### 5. Rode o sistema principal
+### 5. Run the main system
 
 ```bash
 python app/main.py
@@ -97,15 +97,15 @@ python app/main.py
 
 ---
 
-## 📂 Estrutura do Projeto
+## 📂 Project Structure
 
 ```
 pinica_ia/
 ├── app/
-│   ├── main.py                 # Loop principal por cômodo
-│   ├── room_module.py          # Captura de áudio + visão
-│   ├── llm_agent.py            # Comunicação com LLM
-│   ├── mqtt_controller.py      # Publicação no broker
+│   ├── main.py                 # Main loop per room
+│   ├── room_module.py          # Audio + vision capture
+│   ├── llm_agent.py            # LLM communication
+│   ├── mqtt_controller.py      # Broker publishing
 │   ├── configs/
 │   │   ├── rooms.json
 │   │   └── secrets.json
@@ -115,32 +115,32 @@ pinica_ia/
 │   │   ├── llm_utils.py
 │   │   ├── nlp_utils.py
 │   │   ├── vision_utils.py
-│   │   └── voz_utils.py
+│   │   └── voice_utils.py
 │   └── logs/
-│       └── falas_llm.log       # Registro de todas as falas
+│       └── llm_speech.log      # All spoken responses log
 ├── docker-compose.yml
 └── mosquitto.conf
 ```
 
 ---
 
-## 💬 Exemplos de Frases
+## 💬 Sample Phrases
 
-- “Está muito calor aqui na sala” → Aciona ar-condicionado  
-- “Estou indo dormir” → Apaga luzes e fecha cortinas  
-- “Tem alguém na porta?” → Verifica visão e responde  
-- “Qual a temperatura na cozinha?” → Lê sensores e responde  
-
----
-
-## 🔐 Segurança
-
-- Todo o sistema pode rodar **sem internet** (com LLM e TTS locais)  
-- As credenciais de câmeras são separadas no `secrets.json`  
-- Suporte futuro para criptografia e autenticação de comandos  
+- “It’s too hot here in the living room” → Turns on air conditioning  
+- “I’m going to sleep” → Turns off lights and closes curtains  
+- “Is someone at the door?” → Checks vision and responds  
+- “What’s the temperature in the kitchen?” → Reads sensors and responds  
 
 ---
 
-## 💡 Créditos e Inspiração
+## 🔐 Security
 
-Inspirado por sistemas como Jarvis (Iron Man), Home Assistant, ESPHome, Ollama e a vontade de ter uma **casa que conversa com a gente**.
+- The entire system can run **offline** (local LLM and TTS)  
+- Camera credentials are stored separately in `secrets.json`  
+- Future support for encryption and command authentication  
+
+---
+
+## 💡 Credits and Inspiration
+
+Inspired by systems like Jarvis (Iron Man), Home Assistant, ESPHome, Ollama, and the dream of having a **house that talks to us**.
