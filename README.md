@@ -58,7 +58,7 @@ Each function is encapsulated as an **independent agent**, orchestrated asynchro
 | `SearchAgent`          | Searches the internet with DuckDuckGo and returns structured results       |
 | `IntentClassifierAgent`| Uses a local LLM to detect if input has "coca" and which action to perform |
 | `HomeAssistantUtils`   | Controls smart devices via Home Assistant REST API                         |
-| `main_async.py`        | Async orchestration and command pipeline                                   |
+| `main.py`              | Async orchestration and command pipeline                                   |
 
 ---
 
