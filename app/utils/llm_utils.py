@@ -2,7 +2,6 @@ from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.messages import AIMessage, HumanMessage
-import json
 
 # ------------------------------ Configuração do Modelo ------------------------------
 def model_ollama(model, temperature=0.1):
@@ -43,6 +42,3 @@ def ask_llm_ollama(user_query, chat_history, model_name="phi4"):
 
     except Exception:
         return "❌ Desculpe, não consegui entender ou realizar essa ação. Por favor, tente novamente."
-
-# modelos_disponiveis = ["Llama 3.2", "phi4", "gemma3:27b"]
-# escolha = 1  # Índice do modelo desejado

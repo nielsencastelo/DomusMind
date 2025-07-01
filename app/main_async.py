@@ -8,6 +8,8 @@ from agents.vision_agent import VisionAgent
 from agents.llm_agent import LLMAgent
 from agents.search_agent import SearchAgent
 from agents.intent_classifier_agent import IntentClassifierAgent
+from agents.light_agent import LightAgent
+from app.utils.home_assistant import toggle_light
 
 from langchain_core.messages import AIMessage, HumanMessage
 
@@ -23,6 +25,7 @@ vision_agent = VisionAgent()
 llm_agent = LLMAgent(model_name=modelos_disponiveis[escolha])
 search_agent = SearchAgent()
 intent_agent = IntentClassifierAgent()
+light_agent = LightAgent()
 
 @lru_cache(maxsize=50)
 def cached_llm_response(prompt: str, model: str):
@@ -88,6 +91,21 @@ async def main_async():
             vision_desc = await asyncio.to_thread(vision_agent.capture_and_describe)
             print('📸 Descrição visão:', vision_desc)
             full_prompt = f"{cleaned_input}\nVisão: {vision_desc}"
+
+        elif intent == "luz":
+            saudacao = "💡 Entendido, vou cuidar da iluminação."
+            print(f"💡: {saudacao}")
+            await asyncio.to_thread(speech_agent.speak, saudacao)
+
+            # Descobrir qual luz acionar via LLM
+            entity_id = await asyncio.to_thread(light_agent.get_light_entity_id, cleaned_input)
+            print(f"🔧 Luz identificada: {entity_id}")
+
+            ok, msg = await asyncio.to_thread(toggle_light, room="", turn_on=True, entity_id_override=entity_id)
+            print("✅", msg if ok else f"❌ Erro: {msg}")
+            saudacao = msg
+            print(f"💡: {saudacao}")
+            await asyncio.to_thread(speech_agent.speak, saudacao)
 
         else:
             full_prompt = cleaned_input
