@@ -16,7 +16,7 @@
 - 🗣️ Natural speech responses using Facebook MMS-TTS
 - 🌐 Web search agent via DuckDuckGo
 - 💡 Device control via **Home Assistant (Sonoff supported)**
-- 📊 Optional UI with Streamlit (in development)
+- 📊 Optional UI with Django (in development)
 
 ---
 
