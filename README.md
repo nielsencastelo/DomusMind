@@ -155,6 +155,7 @@ pinica_ia/
 ├── app/
 │   ├── main_async.py
 │   ├── agents/
+├── ├── ha/docker-compose.yml
 │   ├── utils/
 │   │   ├── home_assistant.py  ← control via HA
 │   ├── configs/
