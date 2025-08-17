@@ -1,5 +1,5 @@
 
-# 🏡 Pinica IA – Intelligent Home Assistant with Modular Agents
+# 🏡 DomusMind – do latim Domus (casa) + mente inteligente – Intelligent Home Assistant with Modular Agents
 
 > **Local-first smart home system** with voice, vision, and language intelligence.  
 > Your house **listens, sees, understands, speaks, searches — and now controls lights.**
