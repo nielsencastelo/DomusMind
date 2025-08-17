@@ -1,5 +1,9 @@
 
-# 🏡 DomusMind – do latim Domus (casa) + mente inteligente – Intelligent Home Assistant with Modular Agents
+# 🏡 DomusMind – Intelligent Home Assistant with Modular Agents
+
+The name DomusMind combines the Latin word Domus (meaning “home”) with Mind, symbolizing intelligence, awareness, and adaptability. This fusion conveys the essence of an intelligent home environment, where technology seamlessly integrates with daily life.
+
+DomusMind represents more than just automation; it embodies a smart ecosystem that thinks, adapts, and evolves with its users. By emphasizing modular agents, the system highlights flexibility and scalability, enabling customized solutions for different household needs — from energy efficiency and security to personalized comfort and connectivity.
 
 > **Local-first smart home system** with voice, vision, and language intelligence.  
 > Your house **listens, sees, understands, speaks, searches — and now controls lights.**
