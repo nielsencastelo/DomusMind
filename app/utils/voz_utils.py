@@ -1,20 +1,42 @@
 # from transformers import VitsModel, AutoTokenizer
+from pathlib import Path
 import torch
 import numpy as np
 import sounddevice as sd
 from TTS.api import TTS
+import re
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-tts = TTS(model_name="tts_models/multilingual/multi-dataset/xtts_v2", progress_bar=False).to(device)
+# ✔️ defina a pasta e o arquivo do áudio de referência
+SPEAKER_DIR = Path(r"E:\Projetos\pinica_ia\app\utils")     # raw string evita escapes
+SPEAKER_WAV = SPEAKER_DIR / "Voz_Nielsen.wav"              # Path independe do SO
 
-def speak_text_with_tts(text):
-    wav = tts.tts(text = text, speaker_wav="Voz_Nielsen.wav", language="pt", )
-    sr = getattr(getattr(tts, "synthesizer", None), "output_sample_rate", None) or 24000
+# opcional: valide existência do arquivo
+if not SPEAKER_WAV.exists():
+    raise FileNotFoundError(f"Não encontrei o áudio de referência: {SPEAKER_WAV}")
 
-    wav = np.asarray(wav).astype(np.float32).reshape(-1)
+tts = TTS(
+    model_name="tts_models/multilingual/multi-dataset/xtts_v2",
+    progress_bar=False
+).to(device)
+
+
+def limpa_pontuacao(texto):
+    return re.sub(r'\.(\s|$)', r'\1', texto)
+
+def speak_text_with_tts(text: str, speaker_path: Path = SPEAKER_WAV, fallback_sr: int = 24000):
+    # importante: passar str(Path) para a API
+    wav = tts.tts(
+        text=limpa_pontuacao(text),
+        speaker_wav=str(speaker_path),
+        language="pt",
+    )
+    sr = getattr(getattr(tts, "synthesizer", None), "output_sample_rate", None) or fallback_sr
+    wav = np.asarray(wav, dtype=np.float32).reshape(-1)
     sd.play(wav, sr)
     sd.wait()
+
 
 
 # model = VitsModel.from_pretrained("facebook/mms-tts-por")

@@ -135,7 +135,7 @@ HASS_URL=http://localhost:8123
 ### 5. Run the assistant
 
 ```bash
-python app/main_async.py
+python main.py
 ```
 
 ---
