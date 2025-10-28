@@ -9,7 +9,7 @@ import re
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 # ✔️ defina a pasta e o arquivo do áudio de referência
-SPEAKER_DIR = Path(r"E:\Projetos\pinica_ia\app\utils")     # raw string evita escapes
+SPEAKER_DIR = Path(r"E:\Projetos\pinica_ia\src\model")     # raw string evita escapes
 SPEAKER_WAV = SPEAKER_DIR / "Voz_Nielsen.wav"              # Path independe do SO
 
 # opcional: valide existência do arquivo

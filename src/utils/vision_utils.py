@@ -1,9 +1,15 @@
 from ultralytics import YOLO
+from pathlib import Path
 import cv2
 from collections import defaultdict
 import time
 
-model = YOLO("yolov8x6.pt")
+# caminho local do modelo
+weights = Path(r"E:\Projetos\pinica_ia\src\model\yolov8x6.pt")
+
+# carregar
+model = YOLO(str(weights))
+print("Modelo carregado:", weights.exists())
 
 def capture_image_and_describe_old():
     cap = cv2.VideoCapture(0)
