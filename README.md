@@ -58,7 +58,7 @@ Each function is encapsulated as an **independent agent**, orchestrated asynchro
 | `AudioAgent`           | Captures microphone audio and transcribes using Whisper                    |
 | `VisionAgent`          | Detects people/objects via camera and describes scene with YOLOv8          |
 | `LLMAgent`             | Handles user interaction via prompt + context using Ollama (Phi-4, etc.)   |
-| `SpeechAgent`          | Converts response text into audio using Facebook MMS-TTS                   |
+| `SpeechAgent`          | Converts response text into audio using Coqui TTS                          |
 | `SearchAgent`          | Searches the internet with DuckDuckGo and returns structured results       |
 | `IntentClassifierAgent`| Uses a local LLM to detect if input has "coca" and which action to perform |
 | `HomeAssistantUtils`   | Controls smart devices via Home Assistant REST API                         |
