@@ -55,27 +55,29 @@ def capture_audio_and_transcribe_continuous(
     # junta todos os chunks
     audio = np.concatenate(buffer)
     audio = np.clip(audio, -1.0, 1.0)
-    audio_int16 = (audio * 32767).astype(np.int16)
+    # audio_int16 = (audio * 32767).astype(np.int16)
 
     # cria diretório recordings/ se não existir
-    save_dir = "recordings"
-    os.makedirs(save_dir, exist_ok=True)
+    # save_dir = "recordings"
+    # os.makedirs(save_dir, exist_ok=True)
 
     # salva com nome timestampado
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    audio_path = os.path.join(save_dir, f"recording_{timestamp}.wav")
-    scipy.io.wavfile.write(audio_path, sample_rate, audio_int16)
+    # timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    # audio_path = os.path.join(save_dir, f"recording_{timestamp}.wav")
+    # scipy.io.wavfile.write(audio_path, sample_rate, audio_int16)
 
-    print(f"💾 Áudio salvo em: {audio_path}")
+    # print(f"💾 Áudio salvo em: {audio_path}")
 
     # transcreve o áudio com Whisper
-    segments, info = model.transcribe(
-        audio_path,
-        language="pt",
-        beam_size=5,
-        best_of=5,
-        vad_filter=True
-    )
+    # segments, info = model.transcribe(
+    #     audio_path,
+    #     language="pt",
+    #     beam_size=5,
+    #     best_of=5,
+    #     vad_filter=True
+    # )
+    segments, info = model.transcribe(audio, language="pt", beam_size=5, best_of=5, vad_filter=True)
+
 
     transcription = " ".join([seg.text for seg in segments])
     print(f"📝 Transcrição: {transcription}")

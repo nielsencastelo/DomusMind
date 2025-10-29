@@ -48,7 +48,7 @@ def capture_image_and_describe_old():
 
 
 
-def capture_image_and_describe(frames_to_capture=5, delay_between_frames=0.3, conf_threshold=0.6):
+def capture_image_and_describe(frames_to_capture=15, delay_between_frames=0.3, conf_threshold=0.6):
     cap = cv2.VideoCapture(0)
     instancias = defaultdict(list)  # armazena contagem por classe em cada frame
 
