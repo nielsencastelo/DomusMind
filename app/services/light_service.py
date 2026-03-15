@@ -51,10 +51,14 @@ class LightService:
         action = parsed["action"]
 
         if not room:
-            return {"ok": False, "message": "Não consegui identificar o cômodo."}
+            return {"ok": False, "message": "Não consegui identificar o cômodo.", "parsed": parsed}
 
         if action == "unknown":
-            return {"ok": False, "message": "Não consegui identificar se era para ligar ou desligar."}
+            return {
+                "ok": False,
+                "message": "Não consegui identificar se era para ligar ou desligar.",
+                "parsed": parsed,
+            }
 
         ok, message = self.ha_client.toggle_light(room=room, turn_on=(action == "on"))
         return {"ok": ok, "message": message, "parsed": parsed}

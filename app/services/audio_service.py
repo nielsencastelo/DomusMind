@@ -32,7 +32,7 @@ class AudioService:
     ) -> str:
         model = self._get_model()
 
-        buffer = []
+        buffer: list[np.ndarray] = []
         is_recording = False
         silence_counter = 0
         chunk_duration = 0.2
@@ -45,24 +45,28 @@ class AudioService:
             channels=1,
             dtype="float32",
         )
-        stream.start()
 
-        for _ in range(max_chunks):
-            audio_chunk, _ = stream.read(chunk_samples)
-            audio_chunk = np.squeeze(audio_chunk)
-            rms = np.sqrt(np.mean(audio_chunk**2))
+        try:
+            stream.start()
 
-            if rms > threshold:
-                is_recording = True
-                silence_counter = 0
-                buffer.append(audio_chunk)
-            elif is_recording:
-                silence_counter += 1
-                buffer.append(audio_chunk)
-                if silence_counter >= silence_limit_chunks:
-                    break
+            for _ in range(max_chunks):
+                audio_chunk, _ = stream.read(chunk_samples)
+                audio_chunk = np.squeeze(audio_chunk)
+                rms = np.sqrt(np.mean(audio_chunk**2))
 
-        stream.stop()
+                if rms > threshold:
+                    is_recording = True
+                    silence_counter = 0
+                    buffer.append(audio_chunk)
+                elif is_recording:
+                    silence_counter += 1
+                    buffer.append(audio_chunk)
+
+                    if silence_counter >= silence_limit_chunks:
+                        break
+        finally:
+            stream.stop()
+            stream.close()
 
         if not buffer:
             return ""

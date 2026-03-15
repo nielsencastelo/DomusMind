@@ -2,8 +2,8 @@ from fastapi import APIRouter, HTTPException
 
 from app.adapters.home_assistant_client import HomeAssistantClient
 from app.models.schemas import (
-    LightActionRequest,
     DeviceActionResponse,
+    LightActionRequest,
     VisionRequest,
     VisionResponse,
 )
@@ -34,7 +34,7 @@ def describe_camera(payload: VisionRequest):
     try:
         rooms = config_repo.load_rooms()
         room_cfg = rooms.get(payload.room, {})
-        camera_source = room_cfg.get("camera_source", None)
+        camera_source = room_cfg.get("camera_source")
 
         description = vision_service.capture_and_describe(camera_source=camera_source)
         return VisionResponse(

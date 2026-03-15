@@ -1,14 +1,12 @@
-import os
-from typing import Iterable, Optional
+from typing import Iterable
 
-from dotenv import load_dotenv
 from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_ollama import ChatOllama
 from langchain_openai import ChatOpenAI
 
-load_dotenv()
+from app.core.settings import settings
 
 
 class ProviderRouter:
@@ -18,13 +16,11 @@ class ProviderRouter:
     """
 
     def __init__(self):
-        self.local_model = os.getenv("LOCAL_MODEL", "phi4")
-        self.openai_model = os.getenv("OPENAI_MODEL", "")
-        self.gemini_model = os.getenv("GEMINI_MODEL", "")
-        self.claude_model = os.getenv("CLAUDE_MODEL", "")
-        self.default_chain = self._parse_chain(
-            os.getenv("LLM_FALLBACK_CHAIN", "local,openai,gemini,claude")
-        )
+        self.local_model = settings.local_model
+        self.openai_model = settings.openai_model
+        self.gemini_model = settings.gemini_model
+        self.claude_model = settings.claude_model
+        self.default_chain = self._parse_chain(settings.llm_fallback_chain)
 
     @staticmethod
     def _parse_chain(raw: str) -> list[str]:
@@ -36,7 +32,7 @@ class ProviderRouter:
             return content.strip()
 
         if isinstance(content, list):
-            parts = []
+            parts: list[str] = []
             for item in content:
                 if isinstance(item, dict):
                     text = item.get("text")
@@ -55,22 +51,16 @@ class ProviderRouter:
             return ChatOllama(model=self.local_model, temperature=temperature)
 
         if provider == "openai":
-            if not os.getenv("OPENAI_API_KEY"):
-                raise RuntimeError("OPENAI_API_KEY não definido.")
             if not self.openai_model:
                 raise RuntimeError("OPENAI_MODEL não definido.")
             return ChatOpenAI(model=self.openai_model, temperature=temperature)
 
         if provider == "gemini":
-            if not os.getenv("GOOGLE_API_KEY"):
-                raise RuntimeError("GOOGLE_API_KEY não definido.")
             if not self.gemini_model:
                 raise RuntimeError("GEMINI_MODEL não definido.")
             return ChatGoogleGenerativeAI(model=self.gemini_model, temperature=temperature)
 
         if provider == "claude":
-            if not os.getenv("ANTHROPIC_API_KEY"):
-                raise RuntimeError("ANTHROPIC_API_KEY não definido.")
             if not self.claude_model:
                 raise RuntimeError("CLAUDE_MODEL não definido.")
             return ChatAnthropic(model=self.claude_model, temperature=temperature)
@@ -80,11 +70,11 @@ class ProviderRouter:
     def invoke_messages(
         self,
         messages: list[BaseMessage],
-        providers: Optional[Iterable[str]] = None,
+        providers: Iterable[str] | None = None,
         temperature: float = 0.2,
     ) -> tuple[str, str]:
-        tried = []
-        last_error = None
+        tried: list[str] = []
+        last_error: Exception | None = None
         chain = list(providers) if providers else self.default_chain
 
         for provider in chain:
@@ -92,8 +82,10 @@ class ProviderRouter:
                 model = self._build_model(provider=provider, temperature=temperature)
                 response = model.invoke(messages)
                 text = self._normalize_content(getattr(response, "content", response))
+
                 if not text:
                     raise RuntimeError("Resposta vazia do modelo.")
+
                 return text, provider
             except Exception as exc:
                 tried.append(provider)
@@ -106,14 +98,17 @@ class ProviderRouter:
     def invoke_text(
         self,
         user_text: str,
-        system_text: Optional[str] = None,
-        providers: Optional[Iterable[str]] = None,
+        system_text: str | None = None,
+        providers: Iterable[str] | None = None,
         temperature: float = 0.2,
     ) -> tuple[str, str]:
         messages: list[BaseMessage] = []
+
         if system_text:
             messages.append(SystemMessage(content=system_text))
+
         messages.append(HumanMessage(content=user_text))
+
         return self.invoke_messages(
             messages=messages,
             providers=providers,

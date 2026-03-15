@@ -1,49 +1,48 @@
-import re
-from pathlib import Path
-
-import numpy as np
-import sounddevice as sd
-import torch
-from TTS.api import TTS
-
-from app.core.settings import settings
+from duckduckgo_search import DDGS
 
 
-class SpeechService:
-    def __init__(self):
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.model_name = settings.tts_model_name
-        self.speaker_wav = Path(settings.tts_speaker_wav)
-        self.language = settings.tts_language
-        self.fallback_sr = 24000
-        self._tts = None
+class SearchService:
+    def __init__(self, max_results: int = 5):
+        self.max_results = max_results
 
-    def _get_tts(self):
-        if self._tts is None:
-            self._tts = TTS(
-                model_name=self.model_name,
-                progress_bar=False,
-            ).to(self.device)
-        return self._tts
+    def search(self, query: str) -> list[dict]:
+        results: list[dict] = []
 
-    @staticmethod
-    def limpa_pontuacao(texto: str) -> str:
-        return re.sub(r"\.(\s|$)", r"\1", texto)
+        try:
+            with DDGS() as ddgs:
+                raw_results = ddgs.text(query, max_results=self.max_results)
+                for item in raw_results:
+                    results.append(
+                        {
+                            "title": item.get("title", "").strip(),
+                            "href": item.get("href", "").strip(),
+                            "body": item.get("body", "").strip(),
+                        }
+                    )
+        except Exception:
+            return []
 
-    def speak_text_with_tts(self, text: str) -> None:
-        if not self.speaker_wav.exists():
-            raise FileNotFoundError(f"Áudio de referência não encontrado: {self.speaker_wav}")
+        return results
 
-        tts = self._get_tts()
+    def format_results(self, query: str, results: list[dict]) -> str:
+        if not results:
+            return f"Nenhum resultado relevante foi encontrado para: {query}"
 
-        wav = tts.tts(
-            text=self.limpa_pontuacao(text),
-            speaker_wav=str(self.speaker_wav),
-            language=self.language,
-        )
+        lines = [f"Consulta: {query}", "", "Resultados:"]
+        for idx, item in enumerate(results, start=1):
+            title = item.get("title", "")
+            href = item.get("href", "")
+            body = item.get("body", "")
+            lines.append(f"{idx}. {title}")
+            if body:
+                lines.append(f"Resumo: {body}")
+            if href:
+                lines.append(f"Link: {href}")
+            lines.append("")
 
-        sr = getattr(getattr(tts, "synthesizer", None), "output_sample_rate", None) or self.fallback_sr
-        wav = np.asarray(wav, dtype=np.float32).reshape(-1)
+        return "\n".join(lines).strip()
 
-        sd.play(wav, sr)
-        sd.wait()
+    def search_and_summarize(self, query: str) -> tuple[str, str]:
+        results = self.search(query)
+        formatted = self.format_results(query, results)
+        return formatted, "duckduckgo"

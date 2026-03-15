@@ -1,4 +1,3 @@
-import os
 import re
 from pathlib import Path
 
@@ -6,6 +5,8 @@ import numpy as np
 import sounddevice as sd
 import torch
 from TTS.api import TTS
+
+from app.core.settings import settings
 
 
 class SpeechService:
@@ -16,15 +17,10 @@ class SpeechService:
 
     def __init__(self):
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.model_name = os.getenv(
-            "TTS_MODEL_NAME",
-            "tts_models/multilingual/multi-dataset/xtts_v2",
-        )
-        self.speaker_wav = Path(
-            os.getenv("TTS_SPEAKER_WAV", "models/Voz_Nielsen.wav")
-        )
-        self.language = os.getenv("TTS_LANGUAGE", "pt")
-        self.fallback_sr = int(os.getenv("TTS_FALLBACK_SR", "24000"))
+        self.model_name = settings.tts_model_name
+        self.speaker_wav = Path(settings.tts_speaker_wav)
+        self.language = settings.tts_language
+        self.fallback_sr = settings.tts_fallback_sr
         self._tts = None
 
     def _get_tts(self):
@@ -41,9 +37,7 @@ class SpeechService:
 
     def speak_text_with_tts(self, text: str) -> None:
         if not self.speaker_wav.exists():
-            raise FileNotFoundError(
-                f"Áudio de referência não encontrado: {self.speaker_wav}"
-            )
+            raise FileNotFoundError(f"Áudio de referência não encontrado: {self.speaker_wav}")
 
         tts = self._get_tts()
 
@@ -59,5 +53,6 @@ class SpeechService:
         )
 
         wav = np.asarray(wav, dtype=np.float32).reshape(-1)
+
         sd.play(wav, sr)
         sd.wait()

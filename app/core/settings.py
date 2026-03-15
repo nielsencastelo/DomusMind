@@ -1,5 +1,6 @@
 import os
 from dataclasses import dataclass
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -14,7 +15,10 @@ class Settings:
     openai_model: str = os.getenv("OPENAI_MODEL", "")
     gemini_model: str = os.getenv("GEMINI_MODEL", "")
     claude_model: str = os.getenv("CLAUDE_MODEL", "")
-    llm_fallback_chain: str = os.getenv("LLM_FALLBACK_CHAIN", "local,openai,gemini,claude")
+    llm_fallback_chain: str = os.getenv(
+        "LLM_FALLBACK_CHAIN",
+        "local,openai,gemini,claude",
+    )
 
     hass_url: str = os.getenv("HASS_URL", "http://localhost:8123")
     hass_token: str | None = os.getenv("TOKEN")
@@ -32,8 +36,9 @@ class Settings:
     )
     tts_speaker_wav: str = os.getenv("TTS_SPEAKER_WAV", "models/Voz_Nielsen.wav")
     tts_language: str = os.getenv("TTS_LANGUAGE", "pt")
+    tts_fallback_sr: int = int(os.getenv("TTS_FALLBACK_SR", "24000"))
 
-    rooms_config_path: str = os.getenv("ROOMS_CONFIG_PATH", "configs/rooms.json")
+    rooms_config_path: str = os.getenv("ROOMS_CONFIG_PATH", "app/configs/rooms.json")
 
 
 settings = Settings()

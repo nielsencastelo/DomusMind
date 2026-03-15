@@ -20,4 +20,5 @@ class IntentService:
 
         if intent not in valid:
             return "outro"
+
         return intent

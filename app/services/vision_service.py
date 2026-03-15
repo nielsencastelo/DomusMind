@@ -17,8 +17,12 @@ class VisionService:
         self._model = None
 
     def _get_model(self) -> YOLO:
+        if not self.weights_path.exists():
+            raise FileNotFoundError(f"Peso YOLO não encontrado: {self.weights_path}")
+
         if self._model is None:
             self._model = YOLO(str(self.weights_path))
+
         return self._model
 
     def capture_and_describe(
@@ -37,32 +41,33 @@ class VisionService:
         model = self._get_model()
         instancias = defaultdict(list)
 
-        for _ in range(frames_to_capture):
-            ret, frame = cap.read()
-            if not ret:
-                continue
-
-            frame = cv2.resize(frame, (1280, 720))
-            results = model(frame)
-            names = results[0].names
-            boxes = results[0].boxes
-            count_this_frame = defaultdict(int)
-
-            for box in boxes:
-                conf = float(box.conf[0]) if hasattr(box.conf, "__len__") else float(box.conf)
-                if conf < conf_threshold:
+        try:
+            for _ in range(frames_to_capture):
+                ret, frame = cap.read()
+                if not ret:
                     continue
 
-                cls_id = int(box.cls[0]) if hasattr(box.cls, "__len__") else int(box.cls)
-                label = names[cls_id]
-                count_this_frame[label] += 1
+                frame = cv2.resize(frame, (1280, 720))
+                results = model(frame)
+                names = results[0].names
+                boxes = results[0].boxes
+                count_this_frame = defaultdict(int)
 
-            for label, qtd in count_this_frame.items():
-                instancias[label].append(qtd)
+                for box in boxes:
+                    conf = float(box.conf[0]) if hasattr(box.conf, "__len__") else float(box.conf)
+                    if conf < conf_threshold:
+                        continue
 
-            time.sleep(delay_between_frames)
+                    cls_id = int(box.cls[0]) if hasattr(box.cls, "__len__") else int(box.cls)
+                    label = names[cls_id]
+                    count_this_frame[label] += 1
 
-        cap.release()
+                for label, qtd in count_this_frame.items():
+                    instancias[label].append(qtd)
+
+                time.sleep(delay_between_frames)
+        finally:
+            cap.release()
 
         if not instancias:
             return "Nenhum objeto foi detectado após múltiplas capturas."
