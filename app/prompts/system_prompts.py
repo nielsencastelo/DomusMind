@@ -32,6 +32,8 @@ Regras:
 - "desligar", "apagar" => off
 - Se não identificar o cômodo, retorne room vazio
 - Se não identificar a ação, retorne unknown
+- Considere sinônimos comuns em português do Brasil
+- Não invente cômodos que não foram mencionados
 
 Responda somente JSON válido.
 """

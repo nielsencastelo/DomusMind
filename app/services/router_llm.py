@@ -2,11 +2,11 @@ import os
 from typing import Iterable, Optional
 
 from dotenv import load_dotenv
+from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_ollama import ChatOllama
 from langchain_openai import ChatOpenAI
-from langchain_anthropic import ChatAnthropic
-from langchain_google_genai import ChatGoogleGenerativeAI
 
 load_dotenv()
 
@@ -22,7 +22,6 @@ class ProviderRouter:
         self.openai_model = os.getenv("OPENAI_MODEL", "")
         self.gemini_model = os.getenv("GEMINI_MODEL", "")
         self.claude_model = os.getenv("CLAUDE_MODEL", "")
-
         self.default_chain = self._parse_chain(
             os.getenv("LLM_FALLBACK_CHAIN", "local,openai,gemini,claude")
         )
@@ -86,7 +85,6 @@ class ProviderRouter:
     ) -> tuple[str, str]:
         tried = []
         last_error = None
-
         chain = list(providers) if providers else self.default_chain
 
         for provider in chain:
@@ -116,4 +114,8 @@ class ProviderRouter:
         if system_text:
             messages.append(SystemMessage(content=system_text))
         messages.append(HumanMessage(content=user_text))
-        return self.invoke_messages(messages=messages, providers=providers, temperature=temperature)
+        return self.invoke_messages(
+            messages=messages,
+            providers=providers,
+            temperature=temperature,
+        )

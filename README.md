@@ -135,7 +135,8 @@ HASS_URL=http://localhost:8123
 ### 5. Run the assistant
 
 ```bash
-python main.py
+uvicorn app.api.app:app --reload --host 0.0.0.0 --port 8000
+streamlit run main.py
 ```
 
 ---
