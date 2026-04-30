@@ -27,7 +27,10 @@ services:
   backend:
     build: ./backend
     command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    gpus: all
     environment:
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility,video
       ENV: ${ENV:-dev}
       DEBUG: ${DOMUSMIND_DEBUG:-false}
       DATABASE_URL: postgresql+asyncpg://domusmind:${DB_PASSWORD:-change_me_domusmind}@postgres:5432/domusmind
@@ -48,6 +51,7 @@ services:
       CAMERA_PASSWORD: ${CAMERA_PASSWORD:-}
       DEFAULT_CAMERA_SOURCE: ${DEFAULT_CAMERA_SOURCE:-0}
       YOLO_WEIGHTS: ${YOLO_WEIGHTS:-models/yolov8x.pt}
+      TORCH_DEVICE: ${TORCH_DEVICE:-auto}
       EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-google}
     ports:
       - "8000:8000"
@@ -63,7 +67,10 @@ services:
   celery_worker:
     build: ./backend
     command: celery -A app.celery worker --loglevel=info -Q default,vision,memory,ha
+    gpus: all
     environment:
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility,video
       DATABASE_URL: postgresql+asyncpg://domusmind:${DB_PASSWORD:-change_me_domusmind}@postgres:5432/domusmind
       REDIS_URL: redis://:${REDIS_PASSWORD:-change_me_redis}@redis:6379/0
       HASS_URL: ${HASS_URL:-http://localhost:8123}
@@ -75,6 +82,7 @@ services:
       CAMERA_PASSWORD: ${CAMERA_PASSWORD:-}
       DEFAULT_CAMERA_SOURCE: ${DEFAULT_CAMERA_SOURCE:-0}
       YOLO_WEIGHTS: ${YOLO_WEIGHTS:-models/yolov8x.pt}
+      TORCH_DEVICE: ${TORCH_DEVICE:-auto}
     volumes:
       - ./backend/models:/app/models
     depends_on:

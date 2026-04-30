@@ -3,13 +3,14 @@ import sounddevice as sd
 import torch
 from faster_whisper import WhisperModel
 
+from app.core.compute import torch_device
 from app.core.settings import settings
 
 
 class AudioService:
     def __init__(self):
         self.sample_rate = settings.audio_sample_rate
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = torch_device()
         self._model: WhisperModel | None = None
 
     def _get_model(self) -> WhisperModel:

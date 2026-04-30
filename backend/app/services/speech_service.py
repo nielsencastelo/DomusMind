@@ -6,12 +6,13 @@ import sounddevice as sd
 import torch
 from TTS.api import TTS
 
+from app.core.compute import torch_device
 from app.core.settings import settings
 
 
 class SpeechService:
     def __init__(self):
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = torch_device()
         self.speaker_wav = Path(settings.tts_speaker_wav)
         self._tts: TTS | None = None
 
