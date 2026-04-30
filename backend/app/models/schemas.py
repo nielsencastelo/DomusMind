@@ -32,6 +32,20 @@ class ChatResponse(BaseModel):
     history: list[HistoryItem]
 
 
+class AgentTestRequest(BaseModel):
+    agent: Literal["geral", "intent", "visao", "pesquisa", "luz", "memoria"]
+    message: str = Field(..., min_length=1)
+    provider: Literal["local", "gemini", "openai", "claude"] | None = None
+    model: str | None = None
+    temperature: float = 0.2
+
+
+class AgentTestResponse(BaseModel):
+    agent: str
+    provider_used: str
+    response: str
+
+
 class SpeechRequest(BaseModel):
     text: str = Field(..., min_length=1)
 
@@ -53,6 +67,15 @@ class VisionResponse(BaseModel):
     description: str
 
 
+class VisionSourceTestRequest(BaseModel):
+    source_url: str = Field(..., min_length=1)
+
+
+class VisionSourceTestResponse(BaseModel):
+    ok: bool
+    message: str
+
+
 # ── Devices ────────────────────────────────────────────────────────────────────
 
 class LightActionRequest(BaseModel):
@@ -72,6 +95,18 @@ class CameraIn(BaseModel):
     source_url: str
     username: str | None = None
     password: str | None = None
+    is_default: bool = False
+
+
+class IPCameraIn(BaseModel):
+    name: str
+    ip: str = Field(..., min_length=7)
+    room_name: str | None = None
+    room_id: uuid.UUID | None = None
+    port: int = 554
+    username: str | None = None
+    password: str | None = None
+    channel: str = "101"
     is_default: bool = False
 
 
