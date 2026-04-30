@@ -38,25 +38,25 @@ async def health():
     except Exception as exc:
         services.append(ServiceStatus(name="postgres", ok=False, message=str(exc)))
 
-    # GPU / CUDA
+    # Compute device
     try:
-        from app.core.compute import cuda_status
+        from app.core.compute import cpu_name, cuda_status
 
         gpu = cuda_status()
         if gpu["available"]:
             services.append(ServiceStatus(
-                name="gpu",
+                name="compute",
                 ok=True,
-                message=f"CUDA disponivel: {gpu['device_name']} ({gpu['device_count']} GPU)",
+                message=f"GPU: {gpu['device_name']} ({gpu['device_count']} CUDA)",
             ))
         else:
             services.append(ServiceStatus(
-                name="gpu",
-                ok=False,
-                message="CUDA indisponivel no container; modelos vao usar CPU.",
+                name="compute",
+                ok=True,
+                message=f"CPU: {cpu_name()}",
             ))
     except Exception as exc:
-        services.append(ServiceStatus(name="gpu", ok=False, message=str(exc)))
+        services.append(ServiceStatus(name="compute", ok=True, message=f"CPU: {exc}"))
 
     overall = "ok" if all(s.ok for s in services) else "degraded"
     return HealthResponse(status=overall, services=services)

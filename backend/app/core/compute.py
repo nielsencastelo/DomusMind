@@ -1,6 +1,26 @@
 from app.core.settings import settings
 
 
+def cpu_name() -> str:
+    try:
+        from pathlib import Path
+
+        cpuinfo = Path("/proc/cpuinfo")
+        if cpuinfo.exists():
+            for line in cpuinfo.read_text(encoding="utf-8", errors="ignore").splitlines():
+                if line.lower().startswith("model name"):
+                    return line.split(":", 1)[1].strip()
+    except Exception:
+        pass
+
+    try:
+        import platform
+
+        return platform.processor() or platform.machine() or "CPU desconhecida"
+    except Exception:
+        return "CPU desconhecida"
+
+
 def torch_device() -> str:
     configured = settings.torch_device.strip().lower()
     if configured != "auto":
