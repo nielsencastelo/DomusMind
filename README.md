@@ -1,334 +1,605 @@
+# DomusMind 2.0
 
-# 🏡 DomusMind 2.0 – Personal AI Assistant for Smart Homes
+DomusMind is a full-stack smart-home assistant. The current system is built around a FastAPI backend, a Next.js frontend, PostgreSQL with pgvector, Redis, LangGraph agents, Celery background workers, and Home Assistant integration.
 
-DomusMind 2.0 represents the evolution from a Streamlit prototype to a production-ready system with a modern web interface, independent agents, and advanced AI capabilities. Your personal Jarvis that sees, hears, learns, remembers, and acts.
+The old root-level `app/` Streamlit prototype is legacy code. The active application is:
 
-> **Full-stack AI home assistant** with vision, voice, language intelligence, and Home Assistant integration.  
-> Your house **listens, sees, understands, speaks, searches, remembers — and controls everything through a beautiful web interface.**
+- `backend/` for the FastAPI API, agents, services, database models, migrations, and workers.
+- `frontend/` for the Next.js web interface.
+- `docker-compose.yml` for the complete runtime stack.
 
----
+## Current Features
 
-## ✨ Overview
+- Chat assistant with REST and WebSocket endpoints.
+- Intent routing through a LangGraph agent graph.
+- LLM fallback chain across Gemini, Ollama, OpenAI, and Claude.
+- Home Assistant light/switch control.
+- Home Assistant state sync into Redis through Celery.
+- Room, device, and camera configuration stored in PostgreSQL.
+- Compatibility import/export for the old `rooms.json` shape through `/api/v1/config/rooms`.
+- Camera MJPEG streaming through FastAPI.
+- Vision analysis with Gemini Vision when configured, with YOLO/OpenCV fallback.
+- Short-term chat context in Redis.
+- Persistent conversation history in PostgreSQL.
+- Basic RAG storage with memories and documents using pgvector.
+- Celery workers for HA sync, memory consolidation, and periodic camera monitoring.
+- Next.js pages for dashboard, chat, camera monitor, devices, memory, and settings.
 
-DomusMind 2.0 is a full-stack AI home assistant system built with:
+## Architecture
 
-- 🖥️ **Frontend**: Next.js 15 with shadcn/ui for a modern, responsive web interface
-- ⚙️ **Backend**: FastAPI with LangGraph for orchestrating independent AI agents
-- 🧠 **AI Capabilities**: 
-  - Speech-to-Text with faster-whisper (local, offline)
-  - Vision with YOLOv8 + OpenCV and Gemini Vision API (multimodal)
-  - LLM reasoning with Google Gemini 2.0 Flash (primary) + Ollama Phi-4/Llama 3.2 (local fallback)
-  - Text-to-Speech with Coqui XTTS v2 (Portuguese voice cloning)
-  - Web search via DuckDuckGo
-- 🗄️ **Data & Memory**:
-  - PostgreSQL + pgvector for persistent storage and vector search (RAG)
-  - Redis for short-term session context and caching
-- 🏠 **Home Assistant Integration**: Full bidirectional control via REST API
-- 🐳 **Deployment**: Complete Docker Compose stack for one-command setup
+```text
+Browser
+  |
+  v
+Next.js frontend (:3000)
+  |
+  v
+FastAPI backend (:8000)
+  |
+  +-- LangGraph orchestrator
+  +-- LLM providers: Gemini, Ollama, OpenAI, Claude
+  +-- Home Assistant REST API
+  +-- OpenCV / YOLO / Gemini Vision
+  +-- faster-whisper / XTTS
+  |
+  +-- PostgreSQL + pgvector
+  +-- Redis
+  +-- Celery worker + Celery beat
 
-> Your personal AI assistant that sees through cameras, hears through microphones, understands your requests, remembers past conversations, and controls your smart home — all accessible through a beautiful web interface.
-
-## 🧠 Agent Architecture
-
-DomusMind 2.0 uses a sophisticated multi-agent system built with LangGraph, where each agent is an independent node in a conditional graph. The system intelligently routes requests based on detected intent:
-
-```
-Intent Classification
-          │
-          ▼
-┌─────────┴─────────┬─────────┬─────────┬─────────┐
-▼                   ▼         ▼         ▼         ▼
-[Vision]      [Search]    [HA Control]  [Exit]    [General]
-   │               │            │           │         │
-   ▼               ▼            ▼           ▼         ▼
-[Vision Agent] [Search Agent] [HA Agent]  [Exit]  [Memory Agent]
-   │               │            │           │         │
-   └───────────────┴────────────┴───────────┘         │
-                                                     ▼
-                                              [LLM Agent] → Generates Response
-                                                     │
-                                                     ▼
-                                               [Speech Agent] (Optional)
+Nginx (:80) proxies the frontend and backend for browser access.
 ```
 
-### Specialized Agents:
-- **Vision Agent**: Analyzes camera feeds using YOLOv8 and Gemini Vision for rich scene understanding
-- **Search Agent**: Performs web searches via DuckDuckGo and synthesizes results
-- **HA Agent**: Controls Home Assistant devices (lights, switches, climate, etc.)
-- **Memory Agent**: Manages long-term memory using RAG with pgvector
-- **Audio Agent**: Handles speech-to-text with faster-whisper
-- **Speech Agent**: Converts text to speech with Coqui XTTS v2
-- **LLM Agent**: Generates responses using Google Gemini or local Ollama models
-- **Orchestrator**: LangGraph that manages state and routing between agents
+## Repository Layout
 
-### Independent Workers (Celery):
-- **Vision Worker**: Continuous camera monitoring for events (person detection, motion)
-- **HA Sync Worker**: Keeps device states synchronized with Redis
-- **Memory Consolidation Worker**: Hourly consolidation of conversations into long-term memories
-- **Indexing Worker**: On-demand document indexing for RAG
+```text
+DomusMind/
+  backend/
+    app/
+      main.py                 FastAPI entrypoint
+      api/v1/                 REST and WebSocket routes
+      agents/                 LangGraph orchestration
+      core/                   settings, database, Redis
+      models/                 Pydantic and SQLAlchemy models
+      repositories/           database access layer
+      services/               LLM, RAG, HA, audio, speech, search, vision
+      workers/                Celery tasks
+    alembic/                  database migrations
+    Dockerfile
+    requirements.txt
 
----
+  frontend/
+    src/app/                  Next.js routes
+    src/components/           shared UI components
+    src/hooks/                camera and WebSocket hooks
+    src/lib/                  API client and Zustand store
+    src/types/                shared frontend types
+    Dockerfile
+    package.json
 
-## 📦 Core Components
-
-DomusMind 2.0 consists of the following key components:
-
-### Backend (FastAPI + LangGraph)
-- **API Gateway**: FastAPI server with REST endpoints and WebSocket connections
-- **Agent Orchestrator**: LangGraph-based system routing requests to specialized agents
-- **Specialized Agents**:
-  - Audio Agent: Speech-to-text with faster-whisper
-  - Vision Agent: Object detection (YOLOv8) and scene understanding (Gemini Vision)
-  - Search Agent: Web search via DuckDuckGo with result synthesis
-  - HA Agent: Home Assistant device control and status monitoring
-  - Memory Agent: Long-term memory management using RAG with pgvector
-  - LLM Agent: Response generation with Gemini/Ollama fallback
-  - Speech Agent: Text-to-speech with Coqui XTTS v2
-- **Services Layer**: LLM router, RAG pipeline, audio/vision/HA/search services
-- **Data Layer**: SQLAlchemy models, pgvector for embeddings, Redis caching
-- **Configuration**: System settings stored in database, editable via UI
-
-### Frontend (Next.js 15)
-- **Dashboard**: Live status of services, devices, and recent detections
-- **Chat Interface**: Conversational UI with streaming responses and voice input
-- **Vision Monitor**: Live camera feeds with event timeline and manual analysis
-- **Devices Control**: Real-time device status and control by room
-- **Memory Browser**: Search and manage consolidated memories and documents
-- **Settings Center**: Complete system configuration via web UI (no file editing)
-
-### Infrastructure
-- **Containerization**: Docker Compose orchestrating all services
-- **Storage**: PostgreSQL (data + pgvector), Redis (caching/sessions)
-- **AI Models**: Whisper (STT), YOLOv8 (vision), Gemini/Llama (LLM), XTTS (TTS)
-- **External Integrations**: Home Assistant REST API, DuckDuckGo search
-
----
-
-## 🏠 Home Assistant Integration
-
-DomusMind 2.0 features deep integration with Home Assistant for comprehensive smart home control:
-
-- **Bidirectional Communication**: Read device states and send control commands via Home Assistant REST API
-- **Automatic Discovery**: Agents automatically discover and configure available devices from Home Assistant
-- **Real-time Synchronization**: Device states are continuously synced to Redis for low-latency access
-- **Rich Device Support**: Lights, switches, climate controls, locks, covers, sensors, and more
-- **Context Awareness**: Vision and conversation context enhances HA control (e.g., "turn on the light where I'm standing")
-- **No Manual Configuration**: Devices are managed entirely through the web interface - no JSON file editing required
-
-The HA Agent enables natural language control like:
-- "Turn on the living room lights"
-- "Set the bedroom temperature to 22 degrees"
-- "Is the front door locked?"
-- "Close the garage door"
-- "What's the current humidity in the basement?"
-
----
-
-## 🚀 Getting Started
-
-### 1. Clone the repository
-
-```bash
-git clone https://github.com/yourname/DomusMind.git
-cd DomusMind
+  docker-compose.yml          full stack
+  nginx.conf                  reverse proxy
+  .env.example                environment template
+  docs/                       roadmap and architecture notes
+  app/                        legacy Streamlit prototype, not used by Docker stack
 ```
 
-### 2. Environment Setup
+## Requirements
 
-Copy the example environment file and fill in your configuration:
+- Docker Desktop or Docker Engine with Docker Compose.
+- A valid `.env` file in the project root.
+- Optional: Home Assistant URL and long-lived access token.
+- Optional: Gemini, OpenAI, Anthropic, or local Ollama configuration.
+- Optional: YOLO weights and XTTS reference voice files in `backend/models`.
 
-```bash
-cp .env.example .env
-# Edit .env with your settings:
-#   - Database passwords
-#   - Home Assistant URL and token
-#   - LLM API keys (Gemini, OpenAI)
-#   - Ollama base URL (if using local models)
-#   - Camera IP and credentials
+## Quick Start
+
+From the repository root:
+
+```powershell
+Copy-Item .env.example .env
 ```
 
-### 3. Build and Start Services
+Edit `.env`, then start the stack:
 
-```bash
+```powershell
 docker compose up -d --build
 ```
 
-This will start:
-- PostgreSQL with pgvector (database)
-- Redis (caching and session store)
-- Backend API (FastAPI + LangGraph agents)
-- Frontend UI (Next.js 15)
-- Home Assistant (for device control)
-- Nginx (reverse proxy for frontend/backend)
-- Celery workers and beat (background agents)
+Open:
 
-### 4. Access the Application
+- Web app: `http://localhost`
+- Frontend direct port: `http://localhost:3000`
+- API docs: `http://localhost:8000/docs`
+- Home Assistant: `http://localhost:8123`
 
-Once all services are healthy (wait 1-2 minutes for startup):
+Check logs:
 
-- **Frontend Interface**: http://localhost
-- **API Documentation**: http://localhost:8000/docs
-- **Home Assistant**: http://localhost:8123 (if exposed)
-
-### 5. Initial Configuration
-
-1. Open the frontend at http://localhost
-2. Go to Settings → General to set your assistant name and wake word
-3. Configure LLM providers under Settings → LLM
-4. Add your Home Assistant connection under Settings → Home Assistant
-5. Configure cameras under Settings → Cameras
-6. Define rooms and assign devices under Settings → Rooms
-
-### 6. Using the Assistant
-
-- **Voice Control**: Click the microphone button in the chat interface or use your wake word if configured
-- **Text Chat**: Type messages directly in the chat interface
-- **Vision**: Ask about what cameras see or visit the Vision page for live feeds
-- **Device Control**: Control devices through the chat or Devices page
-- **Memory**: Search past conversations and documents in the Memory page
-
-> **Note**: The first startup may take several minutes as Docker images are built and models are downloaded. Subsequent startups will be much faster.
-
----
-
-## 🎯 Example Commands
-
-DomusMind 2.0 understands natural language and can handle complex requests:
-
-| Example Request                                     | Capability Demonstrated                                     |
-|-----------------------------------------------------|-------------------------------------------------------------|
-| “What's happening in the living room right now?”    | Vision analysis + real-time camera feed description         |
-| “Turn on the lights when I enter the kitchen”       | Future automation (planned)                                 |
-| “Search for the best lasagna recipe and summarize it”| Web search + information synthesis                         |
-| “What did I tell you about my weekend plans yesterday?”| Long-term memory recall via RAG                           |
-| “Set the bedroom temperature to 20 degrees”         | Home Assistant climate control                             |
-| “Show me what the front door camera sees”           | Live vision feed request                                    |
-| “Remember that my wife's birthday is March 15th”    | Personal information storage for future recall              |
-| “What's the difference between LED and OLED TVs?”   | Research assistance with web search                        |
-| “Play some jazz music in the den”                   | Media control via Home Assistant (if configured)           |
-| “Good night, DomusMind”                             | Triggers bedtime routine (lights off, doors locked, etc.)  |
-
----
-
-## 📂 Project Structure
-
-```
-DomusMind/
-├── backend/                          # FastAPI + Agents
-│   ├── app/
-│   │   ├── main.py                   # Entry point FastAPI
-│   │   ├── core/
-│   │   │   ├── settings.py           # Config via pydantic-settings
-│   │   │   ├── database.py           # SQLAlchemy async + pgvector
-│   │   │   └── redis.py              # Cliente Redis
-│   │   ├── api/
-│   │   │   ├── v1/
-│   │   │   │   ├── router.py         # Agrega todas as rotas
-│   │   │   │   ├── chat.py           # WebSocket + REST chat
-│   │   │   │   ├── vision.py         # Stream câmera + análise
-│   │   │   │   ├── devices.py        # Controle HA
-│   │   │   │   ├── memory.py         # Gerenciar memórias/documentos
-│   │   │   │   ├── config.py         # Configurações do sistema
-│   │   │   │   └── health.py         # Status dos serviços
-│   │   ├── agents/                   # Agentes independentes LangGraph
-│   │   │   ├── orchestrator.py       # Grafo principal LangGraph
-│   │   │   ├── audio_agent.py        # Whisper STT
-│   │   │   ├── vision_agent.py       # YOLO + câmera IP + Gemini Vision
-│   │   │   ├── search_agent.py       # DuckDuckGo + síntese
-│   │   │   ├── ha_agent.py           # Home Assistant ações
-│   │   │   ├── memory_agent.py       # RAG + memória de longo prazo
-│   │   │   └── llm_agent.py          # Resposta conversacional
-│   │   ├── models/
-│   │   │   ├── schemas.py            # Pydantic schemas (API)
-│   │   │   └── db_models.py          # SQLAlchemy ORM models
-│   │   ├── repositories/
-│   │   │   ├── conversation_repo.py  # CRUD conversas
-│   │   │   ├── memory_repo.py        # CRUD memórias/documentos
-│   │   │   ├── config_repo.py        # CRUD configurações (no DB)
-│   │   │   └── room_repo.py          # CRUD cômodos
-│   │   ├── services/
-│   │   │   ├── llm_router.py         # Multi-provedor com fallback
-│   │   │   ├── rag_service.py        # Indexação e busca RAG
-│   │   │   ├── audio_service.py      # Whisper
-│   │   │   ├── speech_service.py     # XTTS
-│   │   │   ├── vision_service.py     # YOLO
-│   │   │   ├── ha_service.py         # Home Assistant
-│   │   │   └── search_service.py     # DuckDuckGo
-│   │   └── prompts/
-│   │       └── system_prompts.py     # Todos os prompts
-│   ├── alembic/                      # Migrations do banco
-│   ├── tests/
-│   ├── Dockerfile
-│   └── requirements.txt
-│
-├── frontend/                         # Next.js 15
-│   ├── src/
-│   │   ├── app/
-│   │   │   ├── layout.tsx            # Layout raiz
-│   │   │   ├── page.tsx              # Dashboard principal
-│   │   │   ├── chat/page.tsx         # Interface de chat
-│   │   │   ├── vision/page.tsx       # Monitor câmeras
-│   │   │   ├── devices/page.tsx      # Controle de dispositivos
-│   │   │   ├── memory/page.tsx       # Gerenciar memórias e documentos
-│   │   │   └── settings/
-│   │   │       ├── page.tsx          # Configurações gerais
-│   │   │       ├── rooms/page.tsx    # Configurar cômodos
-│   │   │       └── llm/page.tsx      # Configurar provedores LLM
-│   │   ├── components/
-│   │   │   ├── chat/                 # Componentes do chat
-│   │   │   ├── vision/               # Feed ao vivo câmera
-│   │   │   ├── devices/              # Cards de dispositivos HA
-│   │   │   └── ui/                   # shadcn/ui
-│   │   ├── hooks/
-│   │   │   ├── useWebSocket.ts       # Hook para streaming LLM
-│   │   │   └── useCamera.ts          # Hook para feed câmera
-│   │   ├── lib/
-│   │   │   ├── api.ts                # Cliente para FastAPI
-│   │   │   └── store.ts              # Zustand state
-│   │   └── types/
-│   ├── public/
-│   ├── Dockerfile
-│   └── package.json
-│
-├── docker-compose.yml                # Stack completa
-├── .env.example                      # Variáveis documentadas
-└── docs/
-    ├── ARCHITECTURE.md               # Documentação atual (este projeto)
-    └── ROADMAP_REFACTOR.md           # Este documento
+```powershell
+docker compose logs -f backend
+docker compose logs -f frontend
+docker compose logs -f celery_worker
+docker compose logs -f celery_beat
 ```
 
----
+Stop the stack:
 
-## 🔐 Privacy & Processing
+```powershell
+docker compose down
+```
 
-DomusMind 2.0 is designed with privacy as a core principle:
+Stop and remove persistent volumes:
 
-- **Local-First Processing**: Audio transcription, vision analysis, and LLM reasoning can be performed entirely locally using Ollama models
-- **Flexible Wake Word**: Customizable wake word detection (formerly "coca/koka") with adjustable sensitivity
-- **Selective Cloud Processing**: Only uses cloud APIs (like Gemini) when explicitly configured by the user
-- **Data Ownership**: All conversation history, memories, and configurations are stored in your own PostgreSQL database
-- **Audit Trails**: Optional logging of all interactions for review and debugging
-- **Network Controls**: Ability to disable all external API calls for air-gapped operation
+```powershell
+docker compose down -v
+```
 
----
+Use `down -v` only when you intentionally want to delete PostgreSQL, Redis, and Home Assistant persisted data.
 
-## 🧠 Powered By
+## Environment Configuration
 
-- [faster-whisper](https://github.com/SYSTRAN/faster-whisper) - Efficient speech-to-text
-- [Ollama](https://ollama.com/) - Local LLM hosting (Phi-4, Llama 3.2)
-- [Google Gemini](https://gemini.google.com/) - Primary multimodal LLM
-- [YOLOv8](https://github.com/ultralytics/ultralytics) - Object detection
-- [Coqui XTTS v2](https://github.com/coqui-ai/TTS) - Voice cloning and TTS
-- [LangGraph](https://langchain-ai.github.io/langgraph/) - Agent orchestration
-- [Next.js 15](https://nextjs.org/) - React frontend framework
-- [FastAPI](https://fastapi.tiangolo.com/) - High-performance Python API
-- [PostgreSQL + pgvector](https://www.postgresql.org/) - Database with vector search
-- [Redis](https://redis.io/) - Caching and session store
-- [Docker](https://www.docker.com/) - Containerization
-- [Home Assistant](https://www.home-assistant.io/) - Smart home integration
+Create `.env` from `.env.example`.
 
----
+### Core
 
-## 📘 License
+```env
+ENV=dev
+DOMUSMIND_DEBUG=false
+```
 
-MIT © 2025 – Developed by Nielsen Castelo Damasceno Dantas & contributors
+### Database
+
+```env
+DB_PASSWORD=change_me_domusmind
+```
+
+`docker-compose.yml` builds `DATABASE_URL` automatically for containers:
+
+```env
+postgresql+asyncpg://domusmind:<DB_PASSWORD>@postgres:5432/domusmind
+```
+
+### Redis
+
+```env
+REDIS_PASSWORD=change_me_redis
+REDIS_SESSION_TTL=3600
+```
+
+### Home Assistant
+
+```env
+HASS_URL=http://192.168.2.x:8123
+HASS_TOKEN=your_long_lived_access_token
+```
+
+Create a Home Assistant long-lived access token from your Home Assistant user profile and paste it into `HASS_TOKEN`.
+
+### LLM Providers
+
+At least one provider should be usable.
+
+Gemini:
+
+```env
+GEMINI_API_KEY=
+GEMINI_MODEL=gemini-2.0-flash
+```
+
+Ollama:
+
+```env
+LOCAL_MODEL=phi4
+OLLAMA_BASE_URL=http://host.docker.internal:11434
+```
+
+OpenAI:
+
+```env
+OPENAI_API_KEY=
+OPENAI_MODEL=gpt-4o
+```
+
+Claude:
+
+```env
+ANTHROPIC_API_KEY=
+CLAUDE_MODEL=claude-sonnet-4-6
+```
+
+Fallback order:
+
+```env
+LLM_FALLBACK_CHAIN=gemini,local,openai,claude
+```
+
+### Camera
+
+```env
+CAMERA_IP=192.168.2.218
+CAMERA_USER=admin
+CAMERA_PASSWORD=
+DEFAULT_CAMERA_SOURCE=0
+YOLO_WEIGHTS=models/yolov8x.pt
+```
+
+`DEFAULT_CAMERA_SOURCE=0` uses a local camera device. For an IP camera, configure the camera URL in the web UI under Settings -> Rooms, or import it through the JSON editor.
+
+### Audio and TTS
+
+```env
+AUDIO_SAMPLE_RATE=16000
+WHISPER_MODEL=medium
+WHISPER_COMPUTE_TYPE=float32
+TTS_MODEL_NAME=tts_models/multilingual/multi-dataset/xtts_v2
+TTS_SPEAKER_WAV=models/Voz_Nielsen.wav
+TTS_LANGUAGE=pt
+```
+
+The Docker Compose file mounts `./backend/models` into `/app/models`. Put YOLO weights and the XTTS reference voice file there if you use these features.
+
+### Embeddings
+
+```env
+EMBEDDING_PROVIDER=google
+EMBEDDING_DIM=768
+```
+
+`google` uses Gemini embeddings when `GEMINI_API_KEY` is available. The backend falls back to Ollama embeddings where possible.
+
+### Frontend
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_WS_URL=ws://localhost:8000
+```
+
+These values are used by the browser. If you deploy remotely, set them to the externally reachable backend and WebSocket URLs.
+
+## First-Time Setup In The Web UI
+
+1. Start the stack with `docker compose up -d --build`.
+2. Open `http://localhost`.
+3. Go to `Settings`.
+4. Open `Rooms`.
+5. Add rooms manually, or use the JSON editor to import the old `rooms.json` shape.
+6. Go to `Devices` and test light control.
+7. Go to `Vision` and test the default camera or a room camera.
+8. Go to `Chat` and send a command.
+
+## Room Configuration
+
+Rooms, devices, and cameras are stored in PostgreSQL. The UI still supports a compatibility JSON format similar to the old `rooms.json` file.
+
+Example:
+
+```json
+{
+  "sala": {
+    "friendly_name": "Living Room",
+    "light_entity_id": "light.sala_principal",
+    "light_domain": "light",
+    "camera_source": "rtsp://user:password@192.168.2.218:554/stream"
+  },
+  "quarto": {
+    "friendly_name": "Bedroom",
+    "light_entity_id": "switch.quarto_luz",
+    "light_domain": "switch",
+    "camera_source": "0"
+  }
+}
+```
+
+Import/export endpoints:
+
+- `GET /api/v1/config/rooms`
+- `POST /api/v1/config/rooms`
+
+Native room/device endpoints:
+
+- `GET /api/v1/devices/rooms`
+- `POST /api/v1/devices/rooms`
+- `DELETE /api/v1/devices/rooms/{room_id}`
+- `POST /api/v1/devices/rooms/{room_id}/devices`
+- `POST /api/v1/devices/rooms/{room_id}/cameras`
+
+## Using The Application
+
+### Dashboard
+
+The dashboard shows service health, room count, device count, camera count, and status messages for backend dependencies.
+
+### Chat
+
+The chat page sends messages over WebSocket:
+
+- Text commands are processed by the LangGraph orchestrator.
+- The response includes the detected intent and provider used.
+- The `Speak response` button sends the latest assistant response to the backend TTS endpoint.
+- Conversation turns are stored in Redis for short-term context and PostgreSQL for history.
+
+Example messages:
+
+```text
+Turn on the living room light.
+What is happening on the camera?
+Search the web for Home Assistant best practices.
+Remember that the office light is connected to switch.office_light.
+```
+
+### Vision
+
+The vision page supports:
+
+- MJPEG stream preview from `/api/v1/vision/stream/{room}`.
+- Scene analysis through `/api/v1/vision/describe`.
+- Manual room override for quick testing.
+
+Gemini Vision is used when `GEMINI_API_KEY` is configured. Otherwise the service falls back to YOLO/OpenCV.
+
+### Devices
+
+The devices page supports:
+
+- Listing configured rooms and devices.
+- Light on/off controls.
+- Manual light test by room name.
+- Cached Home Assistant state display from Redis when the HA sync worker has data.
+
+### Memory
+
+The memory page supports:
+
+- Listing stored memories.
+- Adding text documents for indexing.
+- Document storage in PostgreSQL with embeddings when an embedding provider is available.
+
+### Settings
+
+Settings includes:
+
+- Generic key/value configuration in PostgreSQL.
+- LLM preference settings.
+- Room and device configuration.
+- JSON import/export for room compatibility.
+
+## API Reference
+
+Open the generated API docs at:
+
+```text
+http://localhost:8000/docs
+```
+
+Important endpoints:
+
+### Health
+
+- `GET /api/v1/health`
+
+### Chat
+
+- `POST /api/v1/chat`
+- `WS /api/v1/chat/ws/{session_id}`
+- `POST /api/v1/chat/transcribe`
+- `POST /api/v1/chat/speech`
+- `GET /api/v1/chat/history/{session_id}`
+
+### Vision
+
+- `POST /api/v1/vision/describe`
+- `GET /api/v1/vision/stream/{room}`
+- `GET /api/v1/vision/stream/default`
+
+### Devices and Home Assistant
+
+- `POST /api/v1/devices/light`
+- `GET /api/v1/devices/ha/states`
+- `GET /api/v1/devices/ha/state/{entity_id}`
+- `GET /api/v1/devices/ha/cache`
+- `GET /api/v1/devices/ha/cache/{entity_id}`
+- `GET /api/v1/devices/rooms`
+- `POST /api/v1/devices/rooms`
+
+### Memory and Documents
+
+- `GET /api/v1/memory/memories`
+- `DELETE /api/v1/memory/memories/{memory_id}`
+- `POST /api/v1/memory/search`
+- `GET /api/v1/memory/documents`
+- `POST /api/v1/memory/documents`
+- `POST /api/v1/memory/documents/upload`
+
+### Configuration
+
+- `GET /api/v1/config`
+- `GET /api/v1/config/{key}`
+- `PUT /api/v1/config/{key}`
+- `DELETE /api/v1/config/{key}`
+- `GET /api/v1/config/rooms`
+- `POST /api/v1/config/rooms`
+
+## Background Workers
+
+The Compose stack starts:
+
+- `celery_worker`
+- `celery_beat`
+
+Scheduled jobs:
+
+- Home Assistant state sync every 30 seconds.
+- Memory consolidation every hour.
+- Default camera monitoring every 10 seconds.
+
+Worker queues:
+
+```text
+default, vision, memory, ha
+```
+
+Useful logs:
+
+```powershell
+docker compose logs -f celery_worker
+docker compose logs -f celery_beat
+```
+
+## Database Migrations
+
+The backend container runs migrations automatically before starting FastAPI:
+
+```text
+alembic upgrade head
+```
+
+Manual migration command:
+
+```powershell
+docker compose run --rm backend alembic upgrade head
+```
+
+The initial migration creates:
+
+- `rooms`
+- `devices`
+- `cameras`
+- `conversations`
+- `memories`
+- `documents`
+- `system_config`
+- pgvector indexes
+
+## Development Notes
+
+### Backend only
+
+If you want to run only infrastructure and then start the backend manually:
+
+```powershell
+docker compose up -d postgres redis
+cd backend
+uvicorn app.main:app --reload
+```
+
+You need Python dependencies installed locally for this mode.
+
+### Frontend only
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+The frontend expects `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_WS_URL` to point to a running backend.
+
+### Full stack rebuild
+
+```powershell
+docker compose up -d --build
+```
+
+### Check service status
+
+```powershell
+docker compose ps
+docker compose logs -f backend
+```
+
+## Legacy Streamlit App
+
+The root-level `app/` directory is the old Streamlit prototype. It is not used by the current Docker stack.
+
+Do not start the production system with:
+
+```powershell
+streamlit run app/main.py
+```
+
+Use this instead:
+
+```powershell
+docker compose up -d --build
+```
+
+The old Streamlit app called legacy endpoints such as `/api/v1/speech` and `/api/v1/devices/vision`. The current backend uses `/api/v1/chat/speech` and `/api/v1/vision/describe`.
+
+## Troubleshooting
+
+### Backend cannot connect to PostgreSQL
+
+Check:
+
+```powershell
+docker compose ps
+docker compose logs -f postgres
+docker compose logs -f backend
+```
+
+Make sure `DB_PASSWORD` in `.env` is set before the first database volume is created. If you change it after the volume exists, PostgreSQL may still use the old password.
+
+### Redis authentication fails
+
+Check `REDIS_PASSWORD` and restart Redis:
+
+```powershell
+docker compose logs -f redis
+```
+
+If this is a local development environment and you can lose Redis data:
+
+```powershell
+docker compose down -v
+docker compose up -d --build
+```
+
+### Home Assistant is degraded
+
+Confirm:
+
+- `HASS_URL` is reachable from the backend container.
+- `HASS_TOKEN` is a valid long-lived access token.
+- Home Assistant is running.
+
+You can still use chat, memory, and vision features if HA is degraded.
+
+### Camera stream does not load
+
+Check:
+
+- The room has a camera URL configured.
+- The backend container can reach the camera network address.
+- `DEFAULT_CAMERA_SOURCE` is valid.
+- YOLO weights exist at `backend/models/yolov8x.pt` if Gemini Vision is not configured.
+
+### LLM responses fail
+
+Check at least one provider in `LLM_FALLBACK_CHAIN` is configured:
+
+- Gemini needs `GEMINI_API_KEY`.
+- OpenAI needs `OPENAI_API_KEY`.
+- Claude needs `ANTHROPIC_API_KEY`.
+- Ollama needs a reachable `OLLAMA_BASE_URL` and the configured local model pulled.
+
+### TTS fails
+
+Check:
+
+- `backend/models/Voz_Nielsen.wav` exists, or update `TTS_SPEAKER_WAV`.
+- The backend container has access to audio output if you expect server-side playback.
+
+## Current Gaps
+
+These are known implementation gaps in the current codebase:
+
+- WebSocket output currently streams the final response word by word after the agent finishes, not true provider token streaming.
+- Authentication is not implemented yet.
+- Advanced Home Assistant domains such as climate, locks, covers, and media players are not fully implemented.
+- Document upload supports text extraction for text-like files; robust PDF parsing and chunking are not yet implemented.
+- Vision events are not persisted in a dedicated event table yet.
+- The frontend uses custom UI components, not shadcn/ui installation.
+- Automated tests are still missing.
+
+## License
+
+MIT. Developed by Nielsen Castelo Damasceno Dantas and contributors.
