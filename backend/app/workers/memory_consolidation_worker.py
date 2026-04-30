@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import select
 
 from app.celery import celery_app
-from app.core.database import AsyncSessionLocal
+from app.core.database import WorkerSessionLocal
 from app.models.db_models import Conversation
 from app.repositories.memory_repo import MemoryRepository
 from app.services.llm_router import LLMRouter
@@ -19,7 +19,7 @@ def consolidate_recent_conversations() -> dict[str, int | str]:
 async def _consolidate_recent_conversations() -> dict[str, int | str]:
     since = datetime.now(timezone.utc) - timedelta(hours=1)
 
-    async with AsyncSessionLocal() as db:
+    async with WorkerSessionLocal() as db:
         result = await db.execute(
             select(Conversation)
             .where(Conversation.created_at >= since)
@@ -38,7 +38,7 @@ async def _consolidate_recent_conversations() -> dict[str, int | str]:
     rag = RAGService()
     created = 0
 
-    async with AsyncSessionLocal() as db:
+    async with WorkerSessionLocal() as db:
         repo = MemoryRepository(db)
         for session_id, turns in grouped.items():
             transcript = "\n".join(f"{t.role}: {t.content}" for t in turns)

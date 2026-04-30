@@ -14,10 +14,10 @@ async def _monitor_default_camera() -> dict[str, str]:
     vision = VisionService()
     source = settings.default_camera_source
     try:
-        from app.core.database import AsyncSessionLocal
+        from app.core.database import WorkerSessionLocal
         from app.repositories.room_repo import RoomRepository
 
-        async with AsyncSessionLocal() as db:
+        async with WorkerSessionLocal() as db:
             camera_source = await RoomRepository(db).get_global_default_camera()
         if camera_source:
             source = camera_source
