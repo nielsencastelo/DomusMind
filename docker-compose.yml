@@ -27,11 +27,28 @@ services:
   backend:
     build: ./backend
     command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
-    env_file: .env
     environment:
+      ENV: ${ENV:-dev}
+      DEBUG: ${DEBUG:-false}
       DATABASE_URL: postgresql+asyncpg://domusmind:${DB_PASSWORD:-change_me_domusmind}@postgres:5432/domusmind
       REDIS_URL: redis://:${REDIS_PASSWORD:-change_me_redis}@redis:6379/0
+      HASS_URL: ${HASS_URL:-http://localhost:8123}
+      HASS_TOKEN: ${HASS_TOKEN:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.0-flash}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-sonnet-4-6}
+      LOCAL_MODEL: ${LOCAL_MODEL:-phi4}
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      LLM_FALLBACK_CHAIN: ${LLM_FALLBACK_CHAIN:-gemini,local,openai,claude}
+      CAMERA_IP: ${CAMERA_IP:-192.168.2.218}
+      CAMERA_USER: ${CAMERA_USER:-admin}
+      CAMERA_PASSWORD: ${CAMERA_PASSWORD:-}
+      DEFAULT_CAMERA_SOURCE: ${DEFAULT_CAMERA_SOURCE:-0}
+      YOLO_WEIGHTS: ${YOLO_WEIGHTS:-models/yolov8x.pt}
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-google}
     ports:
       - "8000:8000"
     volumes:
@@ -46,10 +63,18 @@ services:
   celery_worker:
     build: ./backend
     command: celery -A app.celery worker --loglevel=info -Q default,vision,memory,ha
-    env_file: .env
     environment:
       DATABASE_URL: postgresql+asyncpg://domusmind:${DB_PASSWORD:-change_me_domusmind}@postgres:5432/domusmind
       REDIS_URL: redis://:${REDIS_PASSWORD:-change_me_redis}@redis:6379/0
+      HASS_URL: ${HASS_URL:-http://localhost:8123}
+      HASS_TOKEN: ${HASS_TOKEN:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      CAMERA_IP: ${CAMERA_IP:-192.168.2.218}
+      CAMERA_USER: ${CAMERA_USER:-admin}
+      CAMERA_PASSWORD: ${CAMERA_PASSWORD:-}
+      DEFAULT_CAMERA_SOURCE: ${DEFAULT_CAMERA_SOURCE:-0}
+      YOLO_WEIGHTS: ${YOLO_WEIGHTS:-models/yolov8x.pt}
     volumes:
       - ./backend/models:/app/models
     depends_on:
@@ -62,10 +87,14 @@ services:
   celery_beat:
     build: ./backend
     command: celery -A app.celery beat --loglevel=info
-    env_file: .env
     environment:
       DATABASE_URL: postgresql+asyncpg://domusmind:${DB_PASSWORD:-change_me_domusmind}@postgres:5432/domusmind
       REDIS_URL: redis://:${REDIS_PASSWORD:-change_me_redis}@redis:6379/0
+      HASS_URL: ${HASS_URL:-http://localhost:8123}
+      HASS_TOKEN: ${HASS_TOKEN:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      DEFAULT_CAMERA_SOURCE: ${DEFAULT_CAMERA_SOURCE:-0}
     depends_on:
       redis:
         condition: service_healthy
