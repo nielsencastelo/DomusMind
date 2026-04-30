@@ -23,20 +23,20 @@ The active application lives in `backend/`, `frontend/`, and `docker-compose.yml
 
 ```mermaid
 flowchart LR
-  user[Browser] --> web[Next.js Console<br/>Dashboard, Chat, Vision, Lab, Settings]
-  web --> api[FastAPI Backend<br/>REST + WebSocket + Health]
-  api --> graph[LangGraph Orchestrator]
-  graph --> router[LLM Router<br/>provider per agent]
-  router --> gemini[Gemini]
-  router --> openai[OpenAI / GPT]
-  router --> claude[Claude]
-  router --> ollama[Ollama Local]
-  api --> vision[Vision Service<br/>OpenCV + YOLOv8x + Gemini Vision]
-  vision --> camera[IP Cameras<br/>Hikvision RTSP]
-  api --> ha[Home Assistant]
-  api --> pg[(PostgreSQL + pgvector)]
-  api --> redis[(Redis)]
-  beat[Celery Beat] --> worker[Celery Worker]
+  user["Browser"] --> web["Next.js Console<br/>Dashboard, Chat, Vision, Lab, Settings"]
+  web --> api["FastAPI Backend<br/>REST + WebSocket + Health"]
+  api --> orchestrator["LangGraph Orchestrator"]
+  orchestrator --> router["LLM Router<br/>provider per agent"]
+  router --> gemini["Gemini"]
+  router --> openai["OpenAI / GPT"]
+  router --> claude["Claude"]
+  router --> ollama["Ollama Local"]
+  api --> vision["Vision Service<br/>OpenCV + YOLOv8x + Gemini Vision"]
+  vision --> camera["IP Cameras<br/>Hikvision RTSP"]
+  api --> ha["Home Assistant"]
+  api --> pg[("PostgreSQL + pgvector")]
+  api --> redis[("Redis")]
+  beat["Celery Beat"] --> worker["Celery Worker"]
   worker --> vision
   worker --> ha
   worker --> pg
