@@ -47,18 +47,18 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-  start[User message] --> intent[Classify intent]
-  intent --> route{Intent}
-  route -->|visao| camera[Capture or describe camera context]
-  route -->|pesquisa| search[Search and summarize]
-  route -->|luz| ha[Parse room/action and call Home Assistant]
-  route -->|outro / sair| memory[Load memory context]
+  start["User message"] --> intent["Classify intent"]
+  intent --> route{"Intent"}
+  route -->|visao| camera["Capture or describe camera context"]
+  route -->|pesquisa| search["Search and summarize"]
+  route -->|luz| ha["Parse room/action and call Home Assistant"]
+  route -->|outro / sair| memory["Load memory context"]
   camera --> memory
   search --> memory
   ha --> memory
-  memory --> answer[Generate response with configured LLM]
-  answer --> persist[Persist in Redis and PostgreSQL]
-  persist --> done[Return to frontend]
+  memory --> answer["Generate response with configured LLM"]
+  answer --> persist["Persist in Redis and PostgreSQL"]
+  persist --> done["Return to frontend"]
 ```
 
 ## Model Stack
@@ -81,14 +81,14 @@ DomusMind is designed to use local acceleration when it exists, without requirin
 
 ```mermaid
 flowchart LR
-  start[Model task] --> check{TORCH_DEVICE}
-  check -->|auto| cuda{CUDA available?}
-  check -->|cpu| cpu[Run on CPU]
-  check -->|cuda| gpu[Run on GPU]
+  start["Model task"] --> check{"TORCH_DEVICE"}
+  check -->|auto| cuda{"CUDA available?"}
+  check -->|cpu| cpu["Run on CPU"]
+  check -->|cuda| gpu["Run on GPU"]
   cuda -->|yes| gpu
   cuda -->|no| cpu
-  gpu --> badge[Frontend badge: GPU + device name]
-  cpu --> badge2[Frontend badge: CPU + processor name]
+  gpu --> badge["Frontend badge: GPU + device name"]
+  cpu --> badge2["Frontend badge: CPU + processor name"]
 ```
 
 The frontend shows a visible compute badge:
