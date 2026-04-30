@@ -191,54 +191,141 @@ Once all services are healthy (wait 1-2 minutes for startup):
 
 ---
 
-## 🗣️ Example Spoken Commands
+## 🎯 Example Commands
 
-| Transcription Example                               | Resulting Action                                            |
+DomusMind 2.0 understands natural language and can handle complex requests:
+
+| Example Request                                     | Capability Demonstrated                                     |
 |-----------------------------------------------------|-------------------------------------------------------------|
-| “Coca, what's in the camera?”                       | VisionAgent runs, takes image, describes people/scene       |
-| “Koka, turn on the light in the office”             | Sends request to HA to turn on `switch.sonoff_...`          |
-| “Hey Coka, search the internet for pinica project”  | DuckDuckGo search executed + summary spoken                 |
-| “Desligar todas as luzes, Coca”                     | (Upcoming) Multi-device HA control pipeline                 |
-| “Finalize assistant, Coca”                          | Assistant shuts down gracefully                             |
+| “What's happening in the living room right now?”    | Vision analysis + real-time camera feed description         |
+| “Turn on the lights when I enter the kitchen”       | Future automation (planned)                                 |
+| “Search for the best lasagna recipe and summarize it”| Web search + information synthesis                         |
+| “What did I tell you about my weekend plans yesterday?”| Long-term memory recall via RAG                           |
+| “Set the bedroom temperature to 20 degrees”         | Home Assistant climate control                             |
+| “Show me what the front door camera sees”           | Live vision feed request                                    |
+| “Remember that my wife's birthday is March 15th”    | Personal information storage for future recall              |
+| “What's the difference between LED and OLED TVs?”   | Research assistance with web search                        |
+| “Play some jazz music in the den”                   | Media control via Home Assistant (if configured)           |
+| “Good night, DomusMind”                             | Triggers bedtime routine (lights off, doors locked, etc.)  |
 
 ---
 
 ## 📂 Project Structure
 
 ```
-pinica_ia/
-├── app/
-│   ├── main_async.py
-│   ├── agents/
-├── ├── ha/docker-compose.yml
-│   ├── utils/
-│   │   ├── home_assistant.py  ← control via HA
-│   ├── configs/
-│   │   ├── rooms.json
-│   │   ├── secrets.json
-├── notebooks/
-├── .env
-└── requirements.txt
+DomusMind/
+├── backend/                          # FastAPI + Agents
+│   ├── app/
+│   │   ├── main.py                   # Entry point FastAPI
+│   │   ├── core/
+│   │   │   ├── settings.py           # Config via pydantic-settings
+│   │   │   ├── database.py           # SQLAlchemy async + pgvector
+│   │   │   └── redis.py              # Cliente Redis
+│   │   ├── api/
+│   │   │   ├── v1/
+│   │   │   │   ├── router.py         # Agrega todas as rotas
+│   │   │   │   ├── chat.py           # WebSocket + REST chat
+│   │   │   │   ├── vision.py         # Stream câmera + análise
+│   │   │   │   ├── devices.py        # Controle HA
+│   │   │   │   ├── memory.py         # Gerenciar memórias/documentos
+│   │   │   │   ├── config.py         # Configurações do sistema
+│   │   │   │   └── health.py         # Status dos serviços
+│   │   ├── agents/                   # Agentes independentes LangGraph
+│   │   │   ├── orchestrator.py       # Grafo principal LangGraph
+│   │   │   ├── audio_agent.py        # Whisper STT
+│   │   │   ├── vision_agent.py       # YOLO + câmera IP + Gemini Vision
+│   │   │   ├── search_agent.py       # DuckDuckGo + síntese
+│   │   │   ├── ha_agent.py           # Home Assistant ações
+│   │   │   ├── memory_agent.py       # RAG + memória de longo prazo
+│   │   │   └── llm_agent.py          # Resposta conversacional
+│   │   ├── models/
+│   │   │   ├── schemas.py            # Pydantic schemas (API)
+│   │   │   └── db_models.py          # SQLAlchemy ORM models
+│   │   ├── repositories/
+│   │   │   ├── conversation_repo.py  # CRUD conversas
+│   │   │   ├── memory_repo.py        # CRUD memórias/documentos
+│   │   │   ├── config_repo.py        # CRUD configurações (no DB)
+│   │   │   └── room_repo.py          # CRUD cômodos
+│   │   ├── services/
+│   │   │   ├── llm_router.py         # Multi-provedor com fallback
+│   │   │   ├── rag_service.py        # Indexação e busca RAG
+│   │   │   ├── audio_service.py      # Whisper
+│   │   │   ├── speech_service.py     # XTTS
+│   │   │   ├── vision_service.py     # YOLO
+│   │   │   ├── ha_service.py         # Home Assistant
+│   │   │   └── search_service.py     # DuckDuckGo
+│   │   └── prompts/
+│   │       └── system_prompts.py     # Todos os prompts
+│   ├── alembic/                      # Migrations do banco
+│   ├── tests/
+│   ├── Dockerfile
+│   └── requirements.txt
+│
+├── frontend/                         # Next.js 15
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── layout.tsx            # Layout raiz
+│   │   │   ├── page.tsx              # Dashboard principal
+│   │   │   ├── chat/page.tsx         # Interface de chat
+│   │   │   ├── vision/page.tsx       # Monitor câmeras
+│   │   │   ├── devices/page.tsx      # Controle de dispositivos
+│   │   │   ├── memory/page.tsx       # Gerenciar memórias e documentos
+│   │   │   └── settings/
+│   │   │       ├── page.tsx          # Configurações gerais
+│   │   │       ├── rooms/page.tsx    # Configurar cômodos
+│   │   │       └── llm/page.tsx      # Configurar provedores LLM
+│   │   ├── components/
+│   │   │   ├── chat/                 # Componentes do chat
+│   │   │   ├── vision/               # Feed ao vivo câmera
+│   │   │   ├── devices/              # Cards de dispositivos HA
+│   │   │   └── ui/                   # shadcn/ui
+│   │   ├── hooks/
+│   │   │   ├── useWebSocket.ts       # Hook para streaming LLM
+│   │   │   └── useCamera.ts          # Hook para feed câmera
+│   │   ├── lib/
+│   │   │   ├── api.ts                # Cliente para FastAPI
+│   │   │   └── store.ts              # Zustand state
+│   │   └── types/
+│   ├── public/
+│   ├── Dockerfile
+│   └── package.json
+│
+├── docker-compose.yml                # Stack completa
+├── .env.example                      # Variáveis documentadas
+└── docs/
+    ├── ARCHITECTURE.md               # Documentação atual (este projeto)
+    └── ROADMAP_REFACTOR.md           # Este documento
 ```
 
 ---
 
-## 🔐 Privacy & Wake Word
+## 🔐 Privacy & Processing
 
-- Assistant only responds if a variation of “coca” is heard (e.g., “koka”, “coka”, “kouka”).
-- All processing is done locally unless a web search is required.
-- Searches and audio logs are saved in separate folders for auditability.
+DomusMind 2.0 is designed with privacy as a core principle:
+
+- **Local-First Processing**: Audio transcription, vision analysis, and LLM reasoning can be performed entirely locally using Ollama models
+- **Flexible Wake Word**: Customizable wake word detection (formerly "coca/koka") with adjustable sensitivity
+- **Selective Cloud Processing**: Only uses cloud APIs (like Gemini) when explicitly configured by the user
+- **Data Ownership**: All conversation history, memories, and configurations are stored in your own PostgreSQL database
+- **Audit Trails**: Optional logging of all interactions for review and debugging
+- **Network Controls**: Ability to disable all external API calls for air-gapped operation
 
 ---
 
 ## 🧠 Powered By
 
-- [Whisper](https://github.com/openai/whisper)
-- [Ollama](https://ollama.com/)
-- [YOLOv8](https://github.com/ultralytics/ultralytics)
-- [DuckDuckGo Search API](https://duckduckgo.com)
-- [MMS-TTS](https://github.com/facebookresearch/fairseq/tree/main/examples/mms)
-- [Home Assistant](https://www.home-assistant.io/)
+- [faster-whisper](https://github.com/SYSTRAN/faster-whisper) - Efficient speech-to-text
+- [Ollama](https://ollama.com/) - Local LLM hosting (Phi-4, Llama 3.2)
+- [Google Gemini](https://gemini.google.com/) - Primary multimodal LLM
+- [YOLOv8](https://github.com/ultralytics/ultralytics) - Object detection
+- [Coqui XTTS v2](https://github.com/coqui-ai/TTS) - Voice cloning and TTS
+- [LangGraph](https://langchain-ai.github.io/langgraph/) - Agent orchestration
+- [Next.js 15](https://nextjs.org/) - React frontend framework
+- [FastAPI](https://fastapi.tiangolo.com/) - High-performance Python API
+- [PostgreSQL + pgvector](https://www.postgresql.org/) - Database with vector search
+- [Redis](https://redis.io/) - Caching and session store
+- [Docker](https://www.docker.com/) - Containerization
+- [Home Assistant](https://www.home-assistant.io/) - Smart home integration
 
 ---
 
