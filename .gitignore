@@ -180,6 +180,7 @@ app/yolov8n.pt
 node_modules/
 .next/
 out/
+.tmp/
 .npm
 yarn-debug.log*
 yarn-error.log*
@@ -196,3 +197,22 @@ pnpm-lock.lock
 .next/
 out/
 build/
+.cache/
+.next/cache/
+
+# Environment variables (keep .env.example but ignore local env files)
+.env
+.env.*
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDEs and editors
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Misc
+__MACOSX/
