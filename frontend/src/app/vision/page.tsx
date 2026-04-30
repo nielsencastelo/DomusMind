@@ -50,8 +50,9 @@ export default function VisionPage() {
     const nextCameras = nextRooms.flatMap((room) => room.cameras);
     setCameras(nextCameras);
     if (!selectedCamera && nextCameras.length > 0) {
-      setSelectedCamera(nextCameras.find((camera) => camera.is_default) ?? nextCameras[0]);
-      const room = nextRooms.find((item) => item.cameras.some((camera) => camera.id === nextCameras[0].id));
+      const camera = nextCameras.find((item) => item.is_default) ?? nextCameras[0];
+      setSelectedCamera(camera);
+      const room = nextRooms.find((item) => item.cameras.some((roomCamera) => roomCamera.id === camera.id));
       setSelectedRoom(room?.name ?? "");
     }
   }
