@@ -6,6 +6,8 @@ from app.agents.orchestrator import agent_graph
 from app.agents.state import AgentState
 from app.core.redis import session_get
 from app.models.schemas import (
+    AgentTestRequest,
+    AgentTestResponse,
     ChatRequest,
     ChatResponse,
     HistoryItem,
@@ -13,8 +15,25 @@ from app.models.schemas import (
     SpeechRequest,
     TranscriptionResponse,
 )
+from app.prompts.system_prompts import (
+    FINAL_RESPONSE_SYSTEM_PROMPT,
+    INTENT_SYSTEM_PROMPT,
+    LIGHT_PARSE_SYSTEM_PROMPT,
+    SEARCH_SUMMARY_SYSTEM_PROMPT,
+    VISION_RESPONSE_SYSTEM_PROMPT,
+)
+from app.services.llm_router import LLMRouter
 
 router = APIRouter(prefix="/chat", tags=["chat"])
+
+AGENT_PROMPTS = {
+    "geral": FINAL_RESPONSE_SYSTEM_PROMPT,
+    "intent": INTENT_SYSTEM_PROMPT,
+    "visao": VISION_RESPONSE_SYSTEM_PROMPT,
+    "pesquisa": SEARCH_SUMMARY_SYSTEM_PROMPT,
+    "luz": LIGHT_PARSE_SYSTEM_PROMPT,
+    "memoria": FINAL_RESPONSE_SYSTEM_PROMPT,
+}
 
 
 @router.post("", response_model=ChatResponse)
@@ -48,6 +67,33 @@ async def chat(payload: ChatRequest):
         response=result.get("final_response", ""),
         provider_used=result.get("provider_used", ""),
         history=history_items,
+    )
+
+
+@router.post("/test-agent", response_model=AgentTestResponse)
+async def test_agent(payload: AgentTestRequest):
+    router_ = LLMRouter()
+    providers = [payload.provider] if payload.provider else None
+    system = AGENT_PROMPTS[payload.agent]
+    message = payload.message
+    if payload.agent == "memoria":
+        message = f"Teste de memoria/RAG sem gravar conversa:\n{payload.message}"
+
+    try:
+        messages = router_.build_messages(message, system_prompt=system)
+        response, provider = await router_.ainvoke(
+            messages,
+            providers=providers,
+            temperature=payload.temperature,
+            model_override=payload.model,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+    return AgentTestResponse(
+        agent=payload.agent,
+        provider_used=provider,
+        response=response,
     )
 
 

@@ -42,12 +42,44 @@ _search = SearchService()
 _vision = VisionService()
 
 
+async def _agent_llm_options(agent: str) -> dict:
+    try:
+        from app.core.database import AsyncSessionLocal
+        from app.repositories.config_repo import ConfigRepository
+
+        async with AsyncSessionLocal() as db:
+            config = await ConfigRepository(db).get("llm.agents")
+        if not isinstance(config, dict):
+            return {}
+        value = config.get(agent) or config.get("geral") or {}
+        return value if isinstance(value, dict) else {}
+    except Exception:
+        return {}
+
+
+def _providers_from_options(options: dict) -> list[str] | None:
+    provider = str(options.get("provider") or "").strip().lower()
+    fallback = options.get("fallback")
+    providers = []
+    if provider:
+        providers.append(provider)
+    if isinstance(fallback, list):
+        providers.extend(str(item).strip().lower() for item in fallback if str(item).strip())
+    return providers or None
+
+
 # ── Node helpers ───────────────────────────────────────────────────────────────
 
 async def _classify_intent(state: AgentState) -> AgentState:
     text = state["user_input"]
     messages = _router.build_messages(text, system_prompt=INTENT_SYSTEM_PROMPT)
-    response, _ = await _router.ainvoke(messages, temperature=0.0)
+    options = await _agent_llm_options("intent")
+    response, _ = await _router.ainvoke(
+        messages,
+        providers=_providers_from_options(options),
+        temperature=0.0,
+        model_override=options.get("model"),
+    )
     intent = response.strip().lower()
     valid = {"visao", "pesquisa", "luz", "sair", "outro"}
     state["intent"] = intent if intent in valid else "outro"
@@ -176,7 +208,13 @@ async def _generate_response(state: AgentState) -> AgentState:
     messages = _router.build_messages(user_msg, system_prompt=system, history=history)
 
     try:
-        response, provider = await _router.ainvoke(messages)
+        options = await _agent_llm_options(intent if intent != "outro" else "geral")
+        response, provider = await _router.ainvoke(
+            messages,
+            providers=_providers_from_options(options),
+            temperature=float(options.get("temperature", 0.2)),
+            model_override=options.get("model"),
+        )
         state["final_response"] = response
         state["provider_used"] = provider
     except Exception as exc:

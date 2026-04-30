@@ -3,16 +3,17 @@
 @tailwind utilities;
 
 :root {
-  --surface: #f6f4ee;
-  --panel: #fbfaf6;
-  --ink: #20211d;
-  --muted: #686b61;
-  --line: #d9d5c8;
-  --soft: #ebe7da;
-  --good: #167c5c;
-  --bad: #c44935;
-  --warn: #b97812;
-  --accent: #275d62;
+  --surface: #eef3f0;
+  --panel: #fbfcf8;
+  --ink: #162325;
+  --muted: #64736e;
+  --line: #d7e0da;
+  --soft: #e5eee9;
+  --good: #13875d;
+  --bad: #c24b3a;
+  --warn: #bf7a18;
+  --accent: #0f766e;
+  --accent-2: #c77d32;
 }
 
 * {
@@ -25,7 +26,9 @@ html {
 
 body {
   margin: 0;
-  background: var(--surface);
+  background:
+    radial-gradient(circle at 15% 0%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 28rem),
+    linear-gradient(135deg, #eef3f0 0%, #f7f6ef 48%, #edf4f5 100%);
   color: var(--ink);
   font-family: ui-sans-serif, "Segoe UI", system-ui, sans-serif;
 }
@@ -51,11 +54,14 @@ button {
 .panel {
   border: 1px solid var(--line);
   background: var(--panel);
+  border-radius: 1rem;
+  box-shadow: 0 18px 45px rgba(20, 35, 38, 0.06);
 }
 
 .control {
   border: 1px solid var(--line);
   background: var(--panel);
+  border-radius: 0.75rem;
   padding: 0.65rem 0.75rem;
   outline: none;
   width: 100%;
@@ -72,6 +78,7 @@ button {
   justify-content: center;
   gap: 0.5rem;
   border: 1px solid var(--ink);
+  border-radius: 0.8rem;
   background: var(--ink);
   color: var(--surface);
   padding: 0.55rem 0.85rem;
@@ -87,6 +94,24 @@ button {
   border-color: var(--line);
   background: var(--panel);
   color: var(--ink);
+}
+
+.btn-accent {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: white;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--panel) 82%, var(--soft));
+  padding: 0.3rem 0.65rem;
+  color: var(--muted);
+  font-size: 0.78rem;
 }
 
 .label {

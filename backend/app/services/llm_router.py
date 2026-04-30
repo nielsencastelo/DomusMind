@@ -38,11 +38,16 @@ class LLMRouter:
             return "\n".join(parts).strip()
         return str(content).strip()
 
-    def _build(self, provider: str, temperature: float = 0.2):
+    def _build(
+        self,
+        provider: str,
+        temperature: float = 0.2,
+        model_override: str | None = None,
+    ):
         match provider:
             case "local":
                 return ChatOllama(
-                    model=settings.local_model,
+                    model=model_override or settings.local_model,
                     base_url=settings.ollama_base_url,
                     temperature=temperature,
                 )
@@ -50,7 +55,7 @@ class LLMRouter:
                 if not settings.openai_api_key:
                     raise RuntimeError("OPENAI_API_KEY não definido.")
                 return ChatOpenAI(
-                    model=settings.openai_model,
+                    model=model_override or settings.openai_model,
                     api_key=settings.openai_api_key,
                     temperature=temperature,
                 )
@@ -58,7 +63,7 @@ class LLMRouter:
                 if not settings.gemini_api_key:
                     raise RuntimeError("GEMINI_API_KEY não definido.")
                 return ChatGoogleGenerativeAI(
-                    model=settings.gemini_model,
+                    model=model_override or settings.gemini_model,
                     google_api_key=settings.gemini_api_key,
                     temperature=temperature,
                 )
@@ -66,7 +71,7 @@ class LLMRouter:
                 if not settings.anthropic_api_key:
                     raise RuntimeError("ANTHROPIC_API_KEY não definido.")
                 return ChatAnthropic(
-                    model=settings.claude_model,
+                    model=model_override or settings.claude_model,
                     api_key=settings.anthropic_api_key,
                     temperature=temperature,
                 )
@@ -78,13 +83,14 @@ class LLMRouter:
         messages: list[BaseMessage],
         providers: Iterable[str] | None = None,
         temperature: float = 0.2,
+        model_override: str | None = None,
     ) -> tuple[str, str]:
         chain = list(providers) if providers else self.default_chain
         last_error: Exception | None = None
 
         for provider in chain:
             try:
-                model = self._build(provider, temperature)
+                model = self._build(provider, temperature, model_override)
                 response = model.invoke(messages)
                 text = self._normalize(getattr(response, "content", response))
                 if not text:
@@ -102,13 +108,14 @@ class LLMRouter:
         messages: list[BaseMessage],
         providers: Iterable[str] | None = None,
         temperature: float = 0.2,
+        model_override: str | None = None,
     ) -> tuple[str, str]:
         chain = list(providers) if providers else self.default_chain
         last_error: Exception | None = None
 
         for provider in chain:
             try:
-                model = self._build(provider, temperature)
+                model = self._build(provider, temperature, model_override)
                 response = await model.ainvoke(messages)
                 text = self._normalize(getattr(response, "content", response))
                 if not text:
@@ -126,6 +133,7 @@ class LLMRouter:
         messages: list[BaseMessage],
         providers: Iterable[str] | None = None,
         temperature: float = 0.2,
+        model_override: str | None = None,
     ) -> AsyncGenerator[tuple[str, str], None]:
         """Yield (token, provider) for streaming responses."""
         chain = list(providers) if providers else self.default_chain
@@ -133,7 +141,7 @@ class LLMRouter:
 
         for provider in chain:
             try:
-                model = self._build(provider, temperature)
+                model = self._build(provider, temperature, model_override)
                 async for chunk in model.astream(messages):
                     text = self._normalize(getattr(chunk, "content", chunk))
                     if text:

@@ -1,5 +1,6 @@
 import json
 import uuid
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,6 +13,7 @@ from app.models.schemas import (
     DeviceActionResponse,
     DeviceIn,
     DeviceOut,
+    IPCameraIn,
     LightActionRequest,
     OkResponse,
     RoomIn,
@@ -88,6 +90,13 @@ async def list_rooms(db: AsyncSession = Depends(get_db)):
     return await repo.get_all()
 
 
+@router.get("/cameras", response_model=list[CameraOut])
+async def list_cameras(db: AsyncSession = Depends(get_db)):
+    repo = RoomRepository(db)
+    rooms = await repo.get_all()
+    return [camera for room in rooms for camera in room.cameras]
+
+
 @router.post("/rooms", response_model=RoomOut, status_code=201)
 async def create_room(payload: RoomIn, db: AsyncSession = Depends(get_db)):
     repo = RoomRepository(db)
@@ -120,6 +129,36 @@ async def delete_room(room_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     if not ok:
         raise HTTPException(status_code=404, detail="Cômodo não encontrado.")
     return OkResponse(ok=True, message="Cômodo removido.")
+
+
+def _hikvision_rtsp_url(payload: IPCameraIn) -> str:
+    user = quote(payload.username or "", safe="")
+    password = quote(payload.password or "", safe="")
+    auth = f"{user}:{password}@" if user or password else ""
+    channel = payload.channel.strip() or "101"
+    return f"rtsp://{auth}{payload.ip}:{payload.port}/Streaming/Channels/{channel}"
+
+
+@router.post("/cameras/ip", response_model=CameraOut, status_code=201)
+async def add_ip_camera(payload: IPCameraIn, db: AsyncSession = Depends(get_db)):
+    repo = RoomRepository(db)
+    room = None
+    if payload.room_id:
+        room = await repo.get_by_id(payload.room_id)
+    elif payload.room_name:
+        room = await repo.upsert(payload.room_name.strip().lower(), payload.room_name.strip())
+
+    if not room:
+        raise HTTPException(status_code=404, detail="Informe um comodo valido para a camera.")
+
+    return await repo.add_camera(
+        room.id,
+        payload.name,
+        _hikvision_rtsp_url(payload),
+        payload.username,
+        payload.password,
+        payload.is_default,
+    )
 
 
 @router.post("/rooms/{room_id}/cameras", response_model=CameraOut, status_code=201)

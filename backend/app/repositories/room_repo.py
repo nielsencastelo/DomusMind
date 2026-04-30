@@ -141,6 +141,8 @@ class RoomRepository:
         password: str | None = None,
         is_default: bool = False,
     ) -> Camera:
+        if is_default:
+            await self._clear_default_cameras(room_id)
         camera = Camera(
             room_id=room_id,
             name=name,
@@ -153,6 +155,11 @@ class RoomRepository:
         await self.db.commit()
         await self.db.refresh(camera)
         return camera
+
+    async def _clear_default_cameras(self, room_id: uuid.UUID) -> None:
+        result = await self.db.execute(select(Camera).where(Camera.room_id == room_id))
+        for camera in result.scalars().all():
+            camera.is_default = False
 
     async def get_light_entity(self, room_name: str) -> tuple[str, str] | None:
         """Return (entity_id, domain) for the light device in a room."""

@@ -2,7 +2,12 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 
 from app.core.settings import settings
-from app.models.schemas import VisionRequest, VisionResponse
+from app.models.schemas import (
+    VisionRequest,
+    VisionResponse,
+    VisionSourceTestRequest,
+    VisionSourceTestResponse,
+)
 
 router = APIRouter(prefix="/vision", tags=["vision"])
 
@@ -33,6 +38,20 @@ async def describe_scene(payload: VisionRequest):
         return VisionResponse(ok=True, room=payload.room, description=description)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.post("/test-source", response_model=VisionSourceTestResponse)
+async def test_camera_source(payload: VisionSourceTestRequest):
+    from app.services.vision_service import VisionService
+
+    svc = VisionService()
+    frame = svc.capture_frame(payload.source_url)
+    if frame is None:
+        return VisionSourceTestResponse(
+            ok=False,
+            message="Nao foi possivel capturar frame da camera. Verifique IP, usuario, senha, canal e acesso pela rede.",
+        )
+    return VisionSourceTestResponse(ok=True, message="Camera respondeu e um frame foi capturado.")
 
 
 @router.get("/stream/{room}")

@@ -43,6 +43,9 @@ export type Camera = {
   created_at: string;
 };
 
+export type AgentKey = "geral" | "intent" | "visao" | "pesquisa" | "luz" | "memoria";
+export type ProviderKey = "local" | "gemini" | "openai" | "claude";
+
 export type Memory = {
   id: string;
   title: string | null;
@@ -80,6 +83,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 export const api = {
   health: () => request<HealthResponse>("/api/v1/health"),
   rooms: () => request<Room[]>("/api/v1/devices/rooms"),
+  cameras: () => request<Camera[]>("/api/v1/devices/cameras"),
   createRoom: (payload: {
     name: string;
     friendly_name?: string;
@@ -87,6 +91,26 @@ export const api = {
     cameras?: Array<Partial<Camera>>;
   }) =>
     request<Room>("/api/v1/devices/rooms", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  createIpCamera: (payload: {
+    name: string;
+    ip: string;
+    room_name?: string;
+    room_id?: string;
+    port?: number;
+    username?: string;
+    password?: string;
+    channel?: string;
+    is_default?: boolean;
+  }) =>
+    request<Camera>("/api/v1/devices/cameras/ip", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  addCamera: (roomId: string, payload: Partial<Camera>) =>
+    request<Camera>(`/api/v1/devices/rooms/${roomId}/cameras`, {
       method: "POST",
       body: JSON.stringify(payload),
     }),
@@ -104,6 +128,22 @@ export const api = {
     request<{ ok: boolean; room: string | null; description: string }>("/api/v1/vision/describe", {
       method: "POST",
       body: JSON.stringify({ room }),
+    }),
+  testVisionSource: (source_url: string) =>
+    request<{ ok: boolean; message: string }>("/api/v1/vision/test-source", {
+      method: "POST",
+      body: JSON.stringify({ source_url }),
+    }),
+  testAgent: (payload: {
+    agent: AgentKey;
+    message: string;
+    provider?: ProviderKey;
+    model?: string;
+    temperature?: number;
+  }) =>
+    request<{ agent: string; provider_used: string; response: string }>("/api/v1/chat/test-agent", {
+      method: "POST",
+      body: JSON.stringify(payload),
     }),
   cachedHaStates: () => request<HaState[]>("/api/v1/devices/ha/cache"),
   roomsConfig: () => request<{ rooms: Record<string, unknown> }>("/api/v1/config/rooms"),

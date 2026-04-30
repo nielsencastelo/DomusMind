@@ -8,6 +8,7 @@ import {
   CircuitBoard,
   Database,
   Home,
+  FlaskConical,
   MessageSquare,
   Settings,
   SlidersHorizontal,
@@ -17,6 +18,7 @@ const nav = [
   { href: "/", label: "Painel", icon: Home },
   { href: "/chat", label: "Chat", icon: MessageSquare },
   { href: "/vision", label: "Visao", icon: Camera },
+  { href: "/lab", label: "Testes", icon: FlaskConical },
   { href: "/devices", label: "Dispositivos", icon: CircuitBoard },
   { href: "/memory", label: "Memoria", icon: Database },
   { href: "/settings", label: "Ajustes", icon: Settings },
@@ -27,9 +29,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-[var(--surface)] text-[var(--ink)]">
-      <aside className="fixed inset-y-0 left-0 z-20 hidden w-64 border-r border-[var(--line)] bg-[var(--panel)] px-4 py-5 lg:block">
+      <aside className="fixed inset-y-0 left-0 z-20 hidden w-64 border-r border-[var(--line)] bg-[var(--panel)] px-4 py-5 shadow-[20px_0_60px_rgba(18,36,41,0.06)] lg:block">
         <Link href="/" className="flex items-center gap-3 px-2">
-          <span className="grid h-10 w-10 place-items-center bg-[var(--ink)] text-[var(--surface)]">
+          <span className="grid h-10 w-10 place-items-center rounded-xl bg-[var(--accent)] text-white shadow-sm">
             <Bot size={20} />
           </span>
           <span>
@@ -45,8 +47,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 px-3 py-2 text-sm transition ${
-                  active ? "bg-[var(--ink)] text-[var(--surface)]" : "text-[var(--muted)] hover:bg-[var(--soft)] hover:text-[var(--ink)]"
+                className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition ${
+                  active ? "bg-[var(--ink)] text-[var(--surface)] shadow-sm" : "text-[var(--muted)] hover:bg-[var(--soft)] hover:text-[var(--ink)]"
                 }`}
               >
                 <Icon size={17} />
@@ -55,7 +57,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             );
           })}
         </nav>
-        <div className="absolute bottom-5 left-4 right-4 border border-[var(--line)] bg-[var(--surface)] p-3 text-xs text-[var(--muted)]">
+        <div className="absolute bottom-5 left-4 right-4 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-3 text-xs text-[var(--muted)]">
           <div className="mb-2 flex items-center gap-2 text-[var(--ink)]">
             <SlidersHorizontal size={14} />
             Gateway FastAPI
@@ -64,7 +66,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      <header className="sticky top-0 z-10 border-b border-[var(--line)] bg-[var(--panel)]/95 px-3 py-2 backdrop-blur lg:hidden">
+      <header className="sticky top-0 z-10 border-b border-[var(--line)] bg-[var(--panel)]/90 px-3 py-2 backdrop-blur lg:hidden">
         <nav className="flex gap-1 overflow-x-auto">
           {nav.map((item) => {
             const Icon = item.icon;
@@ -73,7 +75,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`grid h-11 min-w-12 place-items-center ${active ? "bg-[var(--ink)] text-[var(--surface)]" : "text-[var(--muted)]"}`}
+                className={`grid h-11 min-w-12 place-items-center rounded-xl ${active ? "bg-[var(--ink)] text-[var(--surface)]" : "text-[var(--muted)]"}`}
                 title={item.label}
               >
                 <Icon size={18} />
