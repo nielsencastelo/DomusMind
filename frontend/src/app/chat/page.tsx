@@ -1,7 +1,8 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { Send, Trash2 } from "lucide-react";
+import { Send, Trash2, Volume2 } from "lucide-react";
+import { api } from "@/lib/api";
 import { useDomusStore } from "@/lib/store";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import type { StreamEvent } from "@/types";
@@ -11,6 +12,7 @@ export default function ChatPage() {
   const [input, setInput] = useState("");
   const [meta, setMeta] = useState("");
   const [busy, setBusy] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
   const messages = useDomusStore((state) => state.messages);
   const setSessionId = useDomusStore((state) => state.setSessionId);
   const addMessage = useDomusStore((state) => state.addMessage);
@@ -54,6 +56,21 @@ export default function ChatPage() {
     socket.send(text);
   }
 
+  async function speakLastResponse() {
+    const lastAssistant = [...messages].reverse().find((message) => message.role === "assistant" && message.content.trim());
+    if (!lastAssistant || speaking) return;
+    setSpeaking(true);
+    setMeta("gerando audio...");
+    try {
+      const result = await api.speak(lastAssistant.content);
+      setMeta(result.message);
+    } catch (err) {
+      setMeta(err instanceof Error ? err.message : "Nao foi possivel reproduzir audio.");
+    } finally {
+      setSpeaking(false);
+    }
+  }
+
   return (
     <section className="grid min-h-[calc(100vh-3rem)] gap-4 lg:grid-cols-[1fr_18rem]">
       <div className="flex min-h-[34rem] flex-col border border-[var(--line)] bg-[var(--panel)]">
@@ -87,6 +104,10 @@ export default function ChatPage() {
         <button className="btn btn-secondary mt-5 w-full" onClick={clearMessages}>
           <Trash2 size={16} />
           Limpar
+        </button>
+        <button className="btn btn-secondary mt-2 w-full" onClick={speakLastResponse} disabled={speaking || !messages.some((message) => message.role === "assistant" && message.content.trim())}>
+          <Volume2 size={16} />
+          Falar resposta
         </button>
       </aside>
     </section>

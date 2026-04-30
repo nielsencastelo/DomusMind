@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { Lightbulb, Power, PowerOff, RefreshCw } from "lucide-react";
 import { api, HaState, Room } from "@/lib/api";
 
@@ -8,6 +8,8 @@ export default function DevicesPage() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [states, setStates] = useState<HaState[]>([]);
   const [message, setMessage] = useState("");
+  const [manualRoom, setManualRoom] = useState("sala");
+  const [manualAction, setManualAction] = useState<"on" | "off">("on");
 
   async function load() {
     const [nextRooms, nextStates] = await Promise.all([
@@ -36,6 +38,11 @@ export default function DevicesPage() {
     return states.find((item) => item.entity_id === entityId)?.state;
   }
 
+  async function submitManual(event: FormEvent) {
+    event.preventDefault();
+    await toggle(manualRoom, manualAction);
+  }
+
   return (
     <section className="space-y-5">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
@@ -50,6 +57,23 @@ export default function DevicesPage() {
       </div>
 
       {message && <div className="panel p-3 text-sm">{message}</div>}
+
+      <form onSubmit={submitManual} className="panel grid gap-3 p-4 md:grid-cols-[1fr_10rem_auto] md:items-end">
+        <label>
+          <span className="label">Comodo</span>
+          <input className="control" value={manualRoom} onChange={(event) => setManualRoom(event.target.value)} />
+        </label>
+        <label>
+          <span className="label">Acao</span>
+          <select className="control" value={manualAction} onChange={(event) => setManualAction(event.target.value as "on" | "off")}>
+            <option value="on">on</option>
+            <option value="off">off</option>
+          </select>
+        </label>
+        <button className="btn" disabled={!manualRoom.trim()}>
+          Testar luz
+        </button>
+      </form>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {rooms.map((room) => (

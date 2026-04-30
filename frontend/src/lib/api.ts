@@ -95,7 +95,23 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ room, action }),
     }),
+  speak: (text: string) =>
+    request<{ ok: boolean; message: string }>("/api/v1/chat/speech", {
+      method: "POST",
+      body: JSON.stringify({ text }),
+    }),
+  describeVision: (room: string | null) =>
+    request<{ ok: boolean; room: string | null; description: string }>("/api/v1/vision/describe", {
+      method: "POST",
+      body: JSON.stringify({ room }),
+    }),
   cachedHaStates: () => request<HaState[]>("/api/v1/devices/ha/cache"),
+  roomsConfig: () => request<{ rooms: Record<string, unknown> }>("/api/v1/config/rooms"),
+  updateRoomsConfig: (rooms: Record<string, unknown>) =>
+    request<{ ok: boolean; message: string }>("/api/v1/config/rooms", {
+      method: "POST",
+      body: JSON.stringify({ rooms }),
+    }),
   memories: () => request<Memory[]>("/api/v1/memory/memories"),
   documents: () => request<Array<{ id: string; filename: string; content: string }>>("/api/v1/memory/documents"),
   createDocument: (filename: string, content: string) =>

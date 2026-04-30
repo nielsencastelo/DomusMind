@@ -117,6 +117,14 @@ class RoomOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class RoomsConfigResponse(BaseModel):
+    rooms: dict[str, Any]
+
+
+class RoomsConfigUpdateRequest(BaseModel):
+    rooms: dict[str, Any]
+
+
 # ── Memory / RAG ───────────────────────────────────────────────────────────────
 
 class MemoryOut(BaseModel):

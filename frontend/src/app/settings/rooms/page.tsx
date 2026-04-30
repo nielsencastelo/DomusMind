@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { Home, Plus } from "lucide-react";
+import { Home, Plus, RefreshCw, Save } from "lucide-react";
 import { api, Room } from "@/lib/api";
 
 export default function RoomsSettingsPage() {
@@ -10,10 +10,16 @@ export default function RoomsSettingsPage() {
   const [friendlyName, setFriendlyName] = useState("");
   const [lightEntity, setLightEntity] = useState("");
   const [cameraUrl, setCameraUrl] = useState("");
+  const [roomsJson, setRoomsJson] = useState("{}");
   const [message, setMessage] = useState("");
 
   async function load() {
-    setRooms(await api.rooms());
+    const [nextRooms, config] = await Promise.all([
+      api.rooms(),
+      api.roomsConfig().catch(() => ({ rooms: {} })),
+    ]);
+    setRooms(nextRooms);
+    setRoomsJson(JSON.stringify(config.rooms, null, 2));
   }
 
   useEffect(() => {
@@ -55,11 +61,38 @@ export default function RoomsSettingsPage() {
     }
   }
 
+  async function saveJsonConfig(event: FormEvent) {
+    event.preventDefault();
+    setMessage("");
+    try {
+      const parsed = JSON.parse(roomsJson) as Record<string, unknown>;
+      const result = await api.updateRoomsConfig(parsed);
+      setMessage(result.message);
+      await load();
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "JSON invalido.");
+    }
+  }
+
   return (
     <section className="grid gap-5 lg:grid-cols-[1fr_24rem]">
       <div>
         <h1 className="page-title">Comodos</h1>
         <p className="mt-2 text-sm text-[var(--muted)]">Cadastro de comodos, luzes e cameras no banco.</p>
+        <form onSubmit={saveJsonConfig} className="panel mt-5 space-y-3 p-4">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="font-semibold">Editor JSON</h2>
+            <button type="button" className="btn btn-secondary" onClick={load}>
+              <RefreshCw size={16} />
+              Recarregar
+            </button>
+          </div>
+          <textarea className="control min-h-80 font-mono text-sm" value={roomsJson} onChange={(event) => setRoomsJson(event.target.value)} />
+          <button className="btn w-fit">
+            <Save size={16} />
+            Salvar JSON
+          </button>
+        </form>
         <div className="mt-5 grid gap-3 md:grid-cols-2">
           {rooms.map((room) => (
             <article key={room.id} className="panel p-4">

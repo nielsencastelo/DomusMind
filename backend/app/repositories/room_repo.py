@@ -61,6 +61,53 @@ class RoomRepository:
         await self.db.commit()
         return True
 
+    async def replace_from_legacy_config(self, rooms_config: dict[str, Any]) -> list[Room]:
+        """Replace rooms/devices/cameras using the old rooms.json shape."""
+        existing = await self.get_all()
+        for room in existing:
+            await self.db.delete(room)
+        await self.db.flush()
+
+        created: list[Room] = []
+        for name, config in rooms_config.items():
+            if not isinstance(config, dict):
+                config = {}
+            room = Room(
+                name=str(name).strip().lower(),
+                friendly_name=config.get("friendly_name") or str(name),
+            )
+            self.db.add(room)
+            await self.db.flush()
+
+            light_entity_id = config.get("light_entity_id")
+            if light_entity_id:
+                self.db.add(
+                    Device(
+                        room_id=room.id,
+                        name=config.get("light_name") or "Luz principal",
+                        entity_id=light_entity_id,
+                        domain=config.get("light_domain") or "light",
+                        device_type="light",
+                        config={},
+                    )
+                )
+
+            camera_source = config.get("camera_source")
+            if camera_source:
+                self.db.add(
+                    Camera(
+                        room_id=room.id,
+                        name=config.get("camera_name") or "Camera principal",
+                        source_url=str(camera_source),
+                        is_default=True,
+                    )
+                )
+
+            created.append(room)
+
+        await self.db.commit()
+        return created
+
     # ── Device helpers ────────────────────────────────────────────────────
 
     async def add_device(

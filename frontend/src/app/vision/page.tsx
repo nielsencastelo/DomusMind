@@ -8,6 +8,7 @@ import { useCamera } from "@/hooks/useCamera";
 export default function VisionPage() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [selectedRoom, setSelectedRoom] = useState("");
+  const [manualRoom, setManualRoom] = useState("");
   const [description, setDescription] = useState("");
   const [busy, setBusy] = useState(false);
   const camera = useCamera(selectedRoom);
@@ -21,12 +22,8 @@ export default function VisionPage() {
     setBusy(true);
     setDescription("");
     try {
-      const response = await fetch(camera.describeUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ room: selectedRoom || null }),
-      });
-      const data = await response.json();
+      const room = manualRoom.trim() || selectedRoom || null;
+      const data = await api.describeVision(room);
       setDescription(data.description ?? "Sem descricao.");
     } catch {
       setDescription("Nao foi possivel analisar a camera.");
@@ -73,6 +70,10 @@ export default function VisionPage() {
                   </option>
                 ))}
               </select>
+            </label>
+            <label>
+              <span className="label">Comodo manual</span>
+              <input className="control" value={manualRoom} onChange={(event) => setManualRoom(event.target.value)} placeholder="escritorio" />
             </label>
             <button className="btn w-full" disabled={busy}>
               <Search size={16} />
