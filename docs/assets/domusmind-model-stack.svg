@@ -1,0 +1,68 @@
+<svg width="1400" height="520" viewBox="0 0 1400 520" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1400" y2="520" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#162325"/>
+      <stop offset="1" stop-color="#233b3f"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="150" y1="110" x2="1250" y2="410" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#65c3b8"/>
+      <stop offset="1" stop-color="#e1a15d"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#000000" flood-opacity="0.24"/>
+    </filter>
+    <style>
+      .title { font: 750 42px Segoe UI, Arial, sans-serif; fill: #fbfcf8; }
+      .subtitle { font: 400 18px Segoe UI, Arial, sans-serif; fill: #bed0cb; }
+      .card { fill: #fbfcf8; stroke: #d7e0da; stroke-width: 1.2; filter: url(#shadow); }
+      .label { font: 750 20px Segoe UI, Arial, sans-serif; fill: #162325; }
+      .small { font: 500 14px Segoe UI, Arial, sans-serif; fill: #60716d; }
+      .pill { font: 700 12px Segoe UI, Arial, sans-serif; fill: #0f766e; }
+      .line { stroke: url(#edge); stroke-width: 3; stroke-linecap: round; }
+    </style>
+  </defs>
+
+  <rect width="1400" height="520" rx="0" fill="url(#bg)"/>
+  <text x="70" y="78" class="title">Model Stack</text>
+  <text x="72" y="110" class="subtitle">DomusMind routes each task to the right model family, with CUDA acceleration when available and CPU fallback when not.</text>
+
+  <rect x="78" y="166" width="218" height="150" rx="22" class="card"/>
+  <text x="110" y="213" class="label">LLM Router</text>
+  <text x="110" y="245" class="small">Gemini 2.0 Flash</text>
+  <text x="110" y="271" class="small">GPT-4o</text>
+  <text x="110" y="297" class="small">Claude Sonnet</text>
+
+  <rect x="354" y="166" width="218" height="150" rx="22" class="card"/>
+  <text x="386" y="213" class="label">Local AI</text>
+  <text x="386" y="245" class="small">Ollama phi4</text>
+  <text x="386" y="271" class="small">Provider fallback</text>
+  <text x="386" y="297" class="small">Offline path</text>
+
+  <rect x="630" y="166" width="218" height="150" rx="22" class="card"/>
+  <text x="662" y="213" class="label">Vision</text>
+  <text x="662" y="245" class="small">Hikvision RTSP</text>
+  <text x="662" y="271" class="small">OpenCV + YOLOv8x</text>
+  <text x="662" y="297" class="small">Gemini Vision</text>
+
+  <rect x="906" y="166" width="218" height="150" rx="22" class="card"/>
+  <text x="938" y="213" class="label">Voice</text>
+  <text x="938" y="245" class="small">faster-whisper</text>
+  <text x="938" y="271" class="small">Coqui XTTS v2</text>
+  <text x="938" y="297" class="small">Reference voice</text>
+
+  <rect x="1182" y="166" width="140" height="150" rx="22" class="card"/>
+  <text x="1213" y="213" class="label">RAG</text>
+  <text x="1213" y="245" class="small">Embeddings</text>
+  <text x="1213" y="271" class="small">pgvector</text>
+  <text x="1213" y="297" class="small">Memory</text>
+
+  <path d="M296 241H354" class="line"/>
+  <path d="M572 241H630" class="line"/>
+  <path d="M848 241H906" class="line"/>
+  <path d="M1124 241H1182" class="line"/>
+
+  <rect x="360" y="376" width="680" height="58" rx="29" fill="#fbfcf8" opacity="0.96"/>
+  <text x="418" y="411" class="pill">TORCH_DEVICE=auto</text>
+  <text x="585" y="411" class="small">CUDA GPU when available</text>
+  <text x="808" y="411" class="small">CPU fallback when not</text>
+</svg>

@@ -63,6 +63,8 @@ flowchart TD
 
 ## Model Stack
 
+![DomusMind model stack](docs/assets/domusmind-model-stack.svg)
+
 | Area | Default / Supported Models | Notes |
 | --- | --- | --- |
 | General LLM | `gemini-2.0-flash`, `gpt-4o`, `claude-sonnet-4-6`, `phi4` | Configurable per agent in the LLM settings screen. |
