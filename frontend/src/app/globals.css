@@ -1,0 +1,97 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --surface: #f6f4ee;
+  --panel: #fbfaf6;
+  --ink: #20211d;
+  --muted: #686b61;
+  --line: #d9d5c8;
+  --soft: #ebe7da;
+  --good: #167c5c;
+  --bad: #c44935;
+  --warn: #b97812;
+  --accent: #275d62;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+}
+
+body {
+  margin: 0;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: ui-sans-serif, "Segoe UI", system-ui, sans-serif;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  min-height: 2.5rem;
+}
+
+.page-title {
+  font-size: clamp(1.6rem, 3vw, 2.7rem);
+  line-height: 1.05;
+  font-weight: 750;
+  letter-spacing: 0;
+}
+
+.panel {
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.control {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  padding: 0.65rem 0.75rem;
+  outline: none;
+  width: 100%;
+}
+
+.control:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: var(--surface);
+  padding: 0.55rem 0.85rem;
+  font-size: 0.9rem;
+  transition: transform 140ms ease, background 140ms ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  border-color: var(--line);
+  background: var(--panel);
+  color: var(--ink);
+}
+
+.label {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
