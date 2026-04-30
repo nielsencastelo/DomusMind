@@ -49,10 +49,10 @@ flowchart LR
 flowchart TD
   start["User message"] --> intent["Classify intent"]
   intent --> route{"Intent"}
-  route -->|visao| camera["Capture or describe camera context"]
-  route -->|pesquisa| search["Search and summarize"]
-  route -->|luz| ha["Parse room/action and call Home Assistant"]
-  route -->|outro / sair| memory["Load memory context"]
+  route -->|vision| camera["Capture or describe camera context"]
+  route -->|search| search["Search and summarize"]
+  route -->|lights| ha["Parse room/action and call Home Assistant"]
+  route -->|general / exit| memory["Load memory context"]
   camera --> memory
   search --> memory
   ha --> memory
@@ -345,7 +345,7 @@ For remote deployment, set these to the externally reachable backend and WebSock
 4. Go to **Vision** and add the Hikvision camera by IP.
 5. Test the camera capture.
 6. Go to **Settings -> LLM** and choose the model/provider per agent.
-7. Go to **Testes** and validate each agent.
+7. Go to **Lab** and validate each agent.
 8. Go to **Chat** and use the full assistant flow.
 
 ## Main Screens
@@ -355,9 +355,9 @@ For remote deployment, set these to the externally reachable backend and WebSock
 | Dashboard | Service health, rooms, devices, cameras, backend status. |
 | Chat | WebSocket assistant for automation, vision, search, and memory. |
 | Vision | IP camera registration, stream preview, source testing, scene analysis. |
-| Testes | Agent laboratory for isolated model/provider validation. |
-| Dispositivos | Room devices, light control, Home Assistant cached state. |
-| Memoria | Memories and document ingestion for RAG. |
+| Lab | Agent laboratory for isolated model/provider validation. |
+| Devices | Room devices, light control, Home Assistant cached state. |
+| Memory | Memories and document ingestion for RAG. |
 | Settings | Generic config, rooms, and LLM matrix. |
 
 ## API Reference
