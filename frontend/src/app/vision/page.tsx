@@ -2,13 +2,15 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { Camera, RefreshCw, Search } from "lucide-react";
-import { API_URL, api, Room } from "@/lib/api";
+import { api, Room } from "@/lib/api";
+import { useCamera } from "@/hooks/useCamera";
 
 export default function VisionPage() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [selectedRoom, setSelectedRoom] = useState("");
   const [description, setDescription] = useState("");
   const [busy, setBusy] = useState(false);
+  const camera = useCamera(selectedRoom);
 
   useEffect(() => {
     api.rooms().then(setRooms).catch(() => setRooms([]));
@@ -19,7 +21,7 @@ export default function VisionPage() {
     setBusy(true);
     setDescription("");
     try {
-      const response = await fetch(`${API_URL}/api/v1/vision/describe`, {
+      const response = await fetch(camera.describeUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ room: selectedRoom || null }),
@@ -32,8 +34,6 @@ export default function VisionPage() {
       setBusy(false);
     }
   }
-
-  const streamRoom = selectedRoom || "default";
 
   return (
     <section className="space-y-5">
@@ -53,8 +53,8 @@ export default function VisionPage() {
           </div>
           <div className="aspect-video bg-[var(--ink)]">
             <img
-              key={streamRoom}
-              src={`${API_URL}/api/v1/vision/stream/${streamRoom}`}
+              key={camera.streamUrl}
+              src={camera.streamUrl}
               alt="Feed da camera"
               className="h-full w-full object-contain"
             />

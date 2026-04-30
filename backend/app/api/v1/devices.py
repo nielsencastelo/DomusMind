@@ -1,9 +1,11 @@
+import json
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.redis import get_redis
 from app.models.schemas import (
     CameraIn,
     CameraOut,
@@ -54,6 +56,28 @@ async def get_ha_state(entity_id: str):
     if state is None:
         raise HTTPException(status_code=404, detail=f"Entidade '{entity_id}' não encontrada.")
     return state
+
+
+@router.get("/ha/cache")
+async def get_cached_ha_states(pattern: str = "*"):
+    """Return HA states synchronized by the Celery worker into Redis."""
+    redis = await get_redis()
+    keys = await redis.keys(f"ha_state:{pattern}")
+    states = []
+    for key in keys:
+        raw = await redis.get(key)
+        if raw:
+            states.append(json.loads(raw))
+    return states
+
+
+@router.get("/ha/cache/{entity_id:path}")
+async def get_cached_ha_state(entity_id: str):
+    redis = await get_redis()
+    raw = await redis.get(f"ha_state:{entity_id}")
+    if raw is None:
+        raise HTTPException(status_code=404, detail=f"Estado em cache para '{entity_id}' nao encontrado.")
+    return json.loads(raw)
 
 
 # ── Room CRUD ─────────────────────────────────────────────────────────────────

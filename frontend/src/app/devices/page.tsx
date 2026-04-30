@@ -2,14 +2,20 @@
 
 import { useEffect, useState } from "react";
 import { Lightbulb, Power, PowerOff, RefreshCw } from "lucide-react";
-import { api, Room } from "@/lib/api";
+import { api, HaState, Room } from "@/lib/api";
 
 export default function DevicesPage() {
   const [rooms, setRooms] = useState<Room[]>([]);
+  const [states, setStates] = useState<HaState[]>([]);
   const [message, setMessage] = useState("");
 
   async function load() {
-    setRooms(await api.rooms());
+    const [nextRooms, nextStates] = await Promise.all([
+      api.rooms(),
+      api.cachedHaStates().catch(() => []),
+    ]);
+    setRooms(nextRooms);
+    setStates(nextStates);
   }
 
   useEffect(() => {
@@ -24,6 +30,10 @@ export default function DevicesPage() {
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Falha ao acionar dispositivo.");
     }
+  }
+
+  function stateFor(entityId: string) {
+    return states.find((item) => item.entity_id === entityId)?.state;
   }
 
   return (
@@ -54,6 +64,9 @@ export default function DevicesPage() {
                       {device.name}
                     </div>
                     <div className="mt-1 text-xs text-[var(--muted)]">{device.entity_id}</div>
+                    {stateFor(device.entity_id) && (
+                      <div className="mt-1 text-xs text-[var(--accent)]">estado: {stateFor(device.entity_id)}</div>
+                    )}
                   </div>
                   {device.device_type === "light" && (
                     <div className="flex gap-1">
