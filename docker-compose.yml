@@ -29,7 +29,7 @@ services:
     command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
     environment:
       ENV: ${ENV:-dev}
-      DEBUG: ${DEBUG:-false}
+      DEBUG: ${DOMUSMIND_DEBUG:-false}
       DATABASE_URL: postgresql+asyncpg://domusmind:${DB_PASSWORD:-change_me_domusmind}@postgres:5432/domusmind
       REDIS_URL: redis://:${REDIS_PASSWORD:-change_me_redis}@redis:6379/0
       HASS_URL: ${HASS_URL:-http://localhost:8123}
