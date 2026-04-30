@@ -44,6 +44,7 @@ class Settings(BaseSettings):
     # RTSP URL built from the camera fields when not overridden
     default_camera_source: str = "0"
     yolo_weights: str = "models/yolov8x.pt"
+    torch_device: str = "auto"
 
     # ── Audio ─────────────────────────────────────────────────────────────
     audio_sample_rate: int = 16000

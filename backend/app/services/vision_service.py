@@ -7,12 +7,14 @@ import cv2
 import numpy as np
 from ultralytics import YOLO
 
+from app.core.compute import torch_device
 from app.core.settings import settings
 
 
 class VisionService:
     def __init__(self):
         self.weights_path = Path(settings.yolo_weights)
+        self.device = torch_device()
         self._model: YOLO | None = None
 
     def _get_model(self) -> YOLO:
@@ -64,7 +66,7 @@ class VisionService:
                 if not ret:
                     continue
                 frame = cv2.resize(frame, (1280, 720))
-                results = model(frame)
+                results = model(frame, device=0 if self.device == "cuda" else self.device)
                 names = results[0].names
                 count: dict[str, int] = defaultdict(int)
                 for box in results[0].boxes:
