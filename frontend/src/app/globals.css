@@ -3,17 +3,19 @@
 @tailwind utilities;
 
 :root {
-  --surface: #eef3f0;
-  --panel: #fbfcf8;
-  --ink: #162325;
-  --muted: #64736e;
-  --line: #d7e0da;
-  --soft: #e5eee9;
-  --good: #13875d;
-  --bad: #c24b3a;
-  --warn: #bf7a18;
-  --accent: #0f766e;
-  --accent-2: #c77d32;
+  --surface: #060d1a;
+  --panel: rgba(10, 18, 36, 0.88);
+  --ink: #c8d8f0;
+  --muted: #5a7090;
+  --line: rgba(0, 180, 220, 0.12);
+  --soft: rgba(15, 28, 55, 0.7);
+  --good: #10d98c;
+  --bad: #f05555;
+  --warn: #f5a623;
+  --accent: #00d4ff;
+  --accent-rgb: 0, 212, 255;
+  --accent-2: #8b5cf6;
+  --accent-2-rgb: 139, 92, 246;
 }
 
 * {
@@ -26,97 +28,189 @@ html {
 
 body {
   margin: 0;
-  background:
-    radial-gradient(circle at 15% 0%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 28rem),
-    linear-gradient(135deg, #eef3f0 0%, #f7f6ef 48%, #edf4f5 100%);
+  background: var(--surface);
+  background-image:
+    radial-gradient(ellipse at 15% 8%, rgba(0, 212, 255, 0.07) 0%, transparent 45%),
+    radial-gradient(ellipse at 82% 85%, rgba(139, 92, 246, 0.07) 0%, transparent 45%),
+    radial-gradient(ellipse at 50% 50%, rgba(0, 160, 200, 0.03) 0%, transparent 70%);
   color: var(--ink);
-  font-family: ui-sans-serif, "Segoe UI", system-ui, sans-serif;
+  font-family: "Inter", ui-sans-serif, "Segoe UI", system-ui, sans-serif;
+  min-height: 100vh;
 }
 
-button,
-input,
-textarea,
-select {
-  font: inherit;
-}
+/* ── Scrollbar ───────────────────────────── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0, 212, 255, 0.2); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
-button {
-  min-height: 2.5rem;
-}
+/* ── Reset ───────────────────────────────── */
+button, input, textarea, select { font: inherit; }
+button { min-height: 2.5rem; cursor: pointer; }
 
+/* ── Typography ──────────────────────────── */
 .page-title {
-  font-size: clamp(1.6rem, 3vw, 2.7rem);
-  line-height: 1.05;
-  font-weight: 750;
-  letter-spacing: 0;
+  font-size: clamp(1.5rem, 3vw, 2.6rem);
+  line-height: 1.08;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  background: linear-gradient(130deg, #ddeeff 20%, var(--accent) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
+/* ── Panel / Card ────────────────────────── */
 .panel {
   border: 1px solid var(--line);
   background: var(--panel);
-  border-radius: 1rem;
-  box-shadow: 0 18px 45px rgba(20, 35, 38, 0.06);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-radius: 1.1rem;
+  box-shadow:
+    0 4px 28px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
+.panel-glow {
+  box-shadow:
+    0 4px 28px rgba(0, 0, 0, 0.45),
+    0 0 50px rgba(0, 212, 255, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+/* ── Form Controls ───────────────────────── */
 .control {
   border: 1px solid var(--line);
-  background: var(--panel);
+  background: rgba(5, 14, 30, 0.8);
+  color: var(--ink);
   border-radius: 0.75rem;
   padding: 0.65rem 0.75rem;
   outline: none;
   width: 100%;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
 }
 
 .control:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 20%, transparent);
+  box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.14);
 }
 
+.control::placeholder {
+  color: var(--muted);
+  opacity: 0.6;
+}
+
+/* ── Buttons ─────────────────────────────── */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border: 1px solid var(--ink);
-  border-radius: 0.8rem;
-  background: var(--ink);
-  color: var(--surface);
-  padding: 0.55rem 0.85rem;
-  font-size: 0.9rem;
-  transition: transform 140ms ease, background 140ms ease;
+  border: 1px solid rgba(0, 180, 220, 0.2);
+  border-radius: 0.85rem;
+  background: rgba(15, 28, 55, 0.9);
+  color: var(--ink);
+  padding: 0.55rem 0.95rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: transform 130ms ease, box-shadow 130ms ease, border-color 130ms ease;
 }
 
 .btn:hover {
   transform: translateY(-1px);
+  border-color: var(--accent);
+  box-shadow: 0 0 18px rgba(0, 212, 255, 0.18);
 }
+
+.btn:active { transform: translateY(0); }
 
 .btn-secondary {
-  border-color: var(--line);
-  background: var(--panel);
-  color: var(--ink);
+  border-color: rgba(0, 180, 220, 0.12);
+  background: rgba(8, 16, 34, 0.7);
+  color: var(--muted);
 }
+
+.btn-secondary:hover { color: var(--ink); }
 
 .btn-accent {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: white;
+  border-color: rgba(0, 212, 255, 0.5);
+  background: rgba(0, 212, 255, 0.12);
+  color: var(--accent);
+  box-shadow: 0 0 16px rgba(0, 212, 255, 0.08);
 }
 
+.btn-accent:hover {
+  background: rgba(0, 212, 255, 0.22);
+  box-shadow: 0 0 28px rgba(0, 212, 255, 0.22);
+}
+
+/* ── Chip / Badge ────────────────────────── */
 .chip {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
   border: 1px solid var(--line);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--panel) 82%, var(--soft));
-  padding: 0.3rem 0.65rem;
+  background: rgba(8, 16, 34, 0.75);
+  padding: 0.28rem 0.65rem;
   color: var(--muted);
-  font-size: 0.78rem;
+  font-size: 0.75rem;
 }
 
+/* ── Labels ──────────────────────────────── */
 .label {
   display: block;
   margin-bottom: 0.35rem;
   color: var(--muted);
-  font-size: 0.8rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ── Animations ──────────────────────────── */
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(16, 217, 140, 0.5); }
+  70%  { box-shadow: 0 0 0 6px rgba(16, 217, 140, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 217, 140, 0); }
+}
+
+@keyframes pulse-ring-bad {
+  0%   { box-shadow: 0 0 0 0 rgba(240, 85, 85, 0.5); }
+  70%  { box-shadow: 0 0 0 6px rgba(240, 85, 85, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(240, 85, 85, 0); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-6px); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+/* ── Nav active state ────────────────────── */
+.nav-active {
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.12), rgba(139, 92, 246, 0.12));
+  border: 1px solid rgba(0, 212, 255, 0.25);
+  color: var(--accent) !important;
+  box-shadow: 0 0 18px rgba(0, 212, 255, 0.08);
+}
+
+/* ── Grid dot background ─────────────────── */
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(0, 180, 220, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 180, 220, 0.04) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+/* ── Neon divider ────────────────────────── */
+.neon-divider {
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.25), transparent);
 }

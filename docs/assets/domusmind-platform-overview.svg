@@ -1,0 +1,93 @@
+<svg width="1400" height="760" viewBox="0 0 1400 760" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1400" y2="760" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#eef4f0"/>
+      <stop offset="0.48" stop-color="#fbf8ef"/>
+      <stop offset="1" stop-color="#e7f2f4"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="154" y1="140" x2="1188" y2="612" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0f766e"/>
+      <stop offset="1" stop-color="#c77d32"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#142326" flood-opacity="0.12"/>
+    </filter>
+    <style>
+      .title { font: 700 58px Segoe UI, Arial, sans-serif; fill: #162325; }
+      .subtitle { font: 400 22px Segoe UI, Arial, sans-serif; fill: #60716d; }
+      .label { font: 700 19px Segoe UI, Arial, sans-serif; fill: #162325; }
+      .small { font: 500 15px Segoe UI, Arial, sans-serif; fill: #60716d; }
+      .tiny { font: 600 13px Segoe UI, Arial, sans-serif; fill: #0f766e; }
+      .card { fill: #fbfcf8; stroke: #d7e0da; stroke-width: 1.4; filter: url(#shadow); }
+      .node { fill: #ffffff; stroke: #d7e0da; stroke-width: 1.2; }
+      .line { stroke: #91a29c; stroke-width: 2.2; stroke-linecap: round; }
+      .line-strong { stroke: url(#accent); stroke-width: 3.2; stroke-linecap: round; }
+    </style>
+  </defs>
+
+  <rect width="1400" height="760" fill="url(#bg)"/>
+  <circle cx="1180" cy="88" r="180" fill="#0f766e" opacity="0.08"/>
+  <circle cx="176" cy="670" r="210" fill="#c77d32" opacity="0.08"/>
+
+  <text x="80" y="102" class="title">DomusMind</text>
+  <text x="82" y="140" class="subtitle">Smart-home AI platform with agents, vision, memory, automation and GPU-aware inference.</text>
+
+  <rect x="74" y="198" width="1252" height="462" rx="28" class="card"/>
+
+  <rect x="126" y="270" width="210" height="118" rx="20" class="node"/>
+  <text x="156" y="314" class="label">Next.js Console</text>
+  <text x="156" y="344" class="small">Dashboard, chat, vision</text>
+  <text x="156" y="370" class="small">LLM matrix and lab</text>
+
+  <rect x="450" y="248" width="240" height="162" rx="22" class="node"/>
+  <text x="486" y="294" class="label">FastAPI Core</text>
+  <text x="486" y="324" class="small">REST, WebSocket</text>
+  <text x="486" y="350" class="small">Health + compute status</text>
+  <text x="486" y="376" class="small">PostgreSQL config</text>
+
+  <rect x="792" y="236" width="260" height="184" rx="22" class="node"/>
+  <text x="830" y="282" class="label">LangGraph Agents</text>
+  <text x="830" y="312" class="small">Intent routing</text>
+  <text x="830" y="338" class="small">Vision, search, lights</text>
+  <text x="830" y="364" class="small">RAG memory context</text>
+  <text x="830" y="390" class="tiny">Provider per agent</text>
+
+  <rect x="1120" y="270" width="154" height="118" rx="20" class="node"/>
+  <text x="1148" y="314" class="label">Models</text>
+  <text x="1148" y="344" class="small">Gemini, GPT</text>
+  <text x="1148" y="370" class="small">Claude, Ollama</text>
+
+  <rect x="126" y="486" width="230" height="98" rx="20" class="node"/>
+  <text x="156" y="526" class="label">IP Cameras</text>
+  <text x="156" y="554" class="small">Hikvision RTSP</text>
+
+  <rect x="450" y="486" width="240" height="98" rx="20" class="node"/>
+  <text x="486" y="526" class="label">Vision Pipeline</text>
+  <text x="486" y="554" class="small">OpenCV, YOLOv8x, Gemini</text>
+
+  <rect x="792" y="486" width="220" height="98" rx="20" class="node"/>
+  <text x="830" y="526" class="label">Memory</text>
+  <text x="830" y="554" class="small">Redis + pgvector</text>
+
+  <rect x="1090" y="486" width="184" height="98" rx="20" class="node"/>
+  <text x="1124" y="526" class="label">Workers</text>
+  <text x="1124" y="554" class="small">Celery + Beat</text>
+
+  <path d="M336 329H450" class="line-strong"/>
+  <path d="M690 329H792" class="line-strong"/>
+  <path d="M1052 329H1120" class="line-strong"/>
+  <path d="M356 535H450" class="line"/>
+  <path d="M690 535H792" class="line"/>
+  <path d="M1012 535H1090" class="line"/>
+  <path d="M570 410V486" class="line"/>
+  <path d="M922 420V486" class="line"/>
+
+  <rect x="80" y="694" width="218" height="38" rx="19" fill="#0f766e" opacity="0.12"/>
+  <text x="106" y="719" class="tiny">GPU auto-detect with CPU fallback</text>
+  <rect x="326" y="694" width="206" height="38" rx="19" fill="#0f766e" opacity="0.12"/>
+  <text x="352" y="719" class="tiny">Hikvision IP camera ready</text>
+  <rect x="560" y="694" width="202" height="38" rx="19" fill="#0f766e" opacity="0.12"/>
+  <text x="586" y="719" class="tiny">LLM per-agent routing</text>
+  <rect x="790" y="694" width="220" height="38" rx="19" fill="#0f766e" opacity="0.12"/>
+  <text x="816" y="719" class="tiny">Docker Compose full stack</text>
+</svg>
