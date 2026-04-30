@@ -182,3 +182,14 @@ class RoomRepository:
         if room.cameras:
             return room.cameras[0].source_url
         return None
+
+    async def get_global_default_camera(self) -> str | None:
+        """Return the first default camera, falling back to any registered camera."""
+        result = await self.db.execute(select(Camera).where(Camera.is_default.is_(True)))
+        camera = result.scalars().first()
+        if camera:
+            return camera.source_url
+
+        result = await self.db.execute(select(Camera))
+        camera = result.scalars().first()
+        return camera.source_url if camera else None

@@ -47,7 +47,15 @@ class VisionService:
         if not cap.isOpened():
             return "Não foi possível acessar a câmera."
 
-        model = self._get_model()
+        try:
+            model = self._get_model()
+        except FileNotFoundError:
+            cap.release()
+            return (
+                "Camera acessivel, mas o modelo YOLO nao esta instalado em "
+                f"{self.weights_path}. Configure GEMINI_API_KEY para descricao visual "
+                "ou adicione o arquivo de pesos no container."
+            )
         instances: dict[str, list[int]] = defaultdict(list)
 
         try:

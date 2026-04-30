@@ -12,6 +12,20 @@ from app.models.schemas import (
 router = APIRouter(prefix="/vision", tags=["vision"])
 
 
+async def _global_camera_source() -> str:
+    from app.core.database import AsyncSessionLocal
+    from app.repositories.room_repo import RoomRepository
+
+    try:
+        async with AsyncSessionLocal() as db:
+            camera_source = await RoomRepository(db).get_global_default_camera()
+        if camera_source:
+            return camera_source
+    except Exception:
+        pass
+    return settings.default_camera_source
+
+
 @router.post("/describe", response_model=VisionResponse)
 async def describe_scene(payload: VisionRequest):
     """Describe the current scene using Gemini Vision or YOLO."""
@@ -31,7 +45,7 @@ async def describe_scene(payload: VisionRequest):
             pass
 
     if source is None:
-        source = settings.default_camera_source
+        source = await _global_camera_source()
 
     try:
         description = await svc.describe(source)
@@ -65,7 +79,7 @@ async def stream_camera(room: str):
     from app.repositories.room_repo import RoomRepository
 
     svc = VisionService()
-    source = settings.default_camera_source
+    source = await _global_camera_source()
 
     try:
         async with AsyncSessionLocal() as db:
@@ -88,7 +102,8 @@ async def stream_default_camera():
     from app.services.vision_service import VisionService
 
     svc = VisionService()
+    source = await _global_camera_source()
     return StreamingResponse(
-        svc.mjpeg_frames(settings.default_camera_source),
+        svc.mjpeg_frames(source),
         media_type="multipart/x-mixed-replace; boundary=frame",
     )
