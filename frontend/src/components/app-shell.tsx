@@ -186,6 +186,36 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             )}
           </button>
 
+          {/* Language switcher */}
+          <div
+            className="flex gap-1 rounded-xl p-2"
+            style={{ background: "rgba(6,12,26,0.7)", border: "1px solid rgba(0,180,220,0.08)" }}
+          >
+            {LOCALES.map(({ code, label }) => (
+              <button
+                key={code}
+                type="button"
+                onClick={() => setLocale(code)}
+                className="flex-1 rounded-lg py-1.5 text-xs font-semibold transition-all"
+                style={
+                  locale === code
+                    ? {
+                        background: "rgba(0,212,255,0.15)",
+                        border: "1px solid rgba(0,212,255,0.3)",
+                        color: "var(--accent)",
+                      }
+                    : {
+                        background: "transparent",
+                        border: "1px solid transparent",
+                        color: "var(--muted)",
+                      }
+                }
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
           {/* Gateway badge */}
           <div
             className="rounded-xl p-3 text-xs"
@@ -196,7 +226,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           >
             <div className="mb-1.5 flex items-center gap-2 font-medium text-[var(--muted)]">
               <SlidersHorizontal size={13} />
-              Gateway FastAPI
+              {t("app.gateway")}
             </div>
             <div className="truncate text-[var(--muted)] opacity-70">
               {process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}
@@ -215,7 +245,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         }}
       >
         <nav className="flex gap-1 overflow-x-auto">
-          {nav.map((item) => {
+          {navItems.map((item) => {
             const Icon = item.icon;
             const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
             return (
@@ -225,7 +255,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 className={`grid h-11 min-w-12 place-items-center rounded-xl transition-all ${
                   active ? "nav-active" : "text-[var(--muted)]"
                 }`}
-                title={item.label}
+                title={t(item.key)}
               >
                 <Icon size={18} />
               </Link>

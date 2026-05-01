@@ -5,6 +5,7 @@ import { Send, Trash2, Volume2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useDomusStore } from "@/lib/store";
 import { useWebSocket } from "@/hooks/useWebSocket";
+import { useI18n } from "@/hooks/useI18n";
 import type { StreamEvent } from "@/types";
 
 export default function ChatPage() {
@@ -19,6 +20,7 @@ export default function ChatPage() {
   const appendAssistantToken = useDomusStore((state) => state.appendAssistantToken);
   const setRunMeta = useDomusStore((state) => state.setRunMeta);
   const clearMessages = useDomusStore((state) => state.clearMessages);
+  const { t } = useI18n();
 
   useEffect(() => {
     setSessionId(sessionId);
@@ -75,7 +77,7 @@ export default function ChatPage() {
     <section className="grid min-h-[calc(100vh-3rem)] gap-4 lg:grid-cols-[1fr_18rem]">
       <div className="flex min-h-[34rem] flex-col border border-[var(--line)] bg-[var(--panel)]">
         <div className="border-b border-[var(--line)] px-4 py-3">
-          <h1 className="text-xl font-semibold">Chat operacional</h1>
+          <h1 className="text-xl font-semibold">{t("chat.title")}</h1>
           <p className="text-sm text-[var(--muted)]">
             {meta || (socket.connected ? "WebSocket conectado." : socket.error || "WebSocket pronto para streaming.")}
           </p>
@@ -88,11 +90,11 @@ export default function ChatPage() {
               </div>
             </div>
           ))}
-          {messages.length === 0 && <div className="text-sm text-[var(--muted)]">Envie um comando, pergunta ou pedido de automacao.</div>}
+          {messages.length === 0 && <div className="text-sm text-[var(--muted)]">{t("chat.empty")}</div>}
         </div>
         <form onSubmit={send} className="flex gap-2 border-t border-[var(--line)] p-3">
-          <input className="control" value={input} onChange={(event) => setInput(event.target.value)} placeholder="Ex: liga a luz da sala" />
-          <button className="btn" disabled={busy} title="Enviar">
+          <input className="control" value={input} onChange={(event) => setInput(event.target.value)} placeholder={t("chat.placeholder")} />
+          <button className="btn" disabled={busy} title={t("chat.send")}>
             <Send size={16} />
           </button>
         </form>
@@ -103,11 +105,11 @@ export default function ChatPage() {
         <p className="break-all text-xs text-[var(--muted)]">{sessionId}</p>
         <button className="btn btn-secondary mt-5 w-full" onClick={clearMessages}>
           <Trash2 size={16} />
-          Limpar
+          {t("chat.clear")}
         </button>
         <button className="btn btn-secondary mt-2 w-full" onClick={speakLastResponse} disabled={speaking || !messages.some((message) => message.role === "assistant" && message.content.trim())}>
           <Volume2 size={16} />
-          Falar resposta
+          {t("chat.speak")}
         </button>
       </aside>
     </section>

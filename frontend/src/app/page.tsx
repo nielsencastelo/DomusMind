@@ -15,6 +15,7 @@ import {
 import { api, type HealthResponse, type Room } from "@/lib/api";
 import { StatusDot } from "@/components/status-dot";
 import { MindSphere } from "@/components/mind-sphere";
+import { useI18n } from "@/hooks/useI18n";
 
 // Mock activity data — shows what the chart looks like with real data
 const ACTIVITY_DATA = [
@@ -34,6 +35,7 @@ export default function DashboardPage() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const { t } = useI18n();
 
   async function load() {
     setError("");
@@ -70,9 +72,9 @@ export default function DashboardPage() {
               Sistema operacional
             </span>
           </div>
-          <h1 className="page-title">Centro de Comando</h1>
+          <h1 className="page-title">{t("dashboard.title")}</h1>
           <p className="mt-2 max-w-xl text-sm text-[var(--muted)]">
-            Estado em tempo real do backend, serviços, cômodos e agentes ativos.
+            {t("dashboard.subtitle")}
           </p>
         </div>
         <button
@@ -82,7 +84,7 @@ export default function DashboardPage() {
           style={{ opacity: loading ? 0.6 : 1 }}
         >
           <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
-          {loading ? "Atualizando..." : "Atualizar"}
+          {loading ? t("common.loading") : t("dashboard.refresh")}
         </button>
       </div>
 
@@ -307,7 +309,7 @@ export default function DashboardPage() {
           <div className="panel p-4">
             <div className="mb-4 flex items-center gap-2">
               <Wifi size={15} className="text-[var(--accent)]" />
-              <h2 className="font-semibold">Saúde dos Serviços</h2>
+              <h2 className="font-semibold">{t("dashboard.services")}</h2>
               {health && (
                 <span className="ml-auto text-xs text-[var(--muted)]">
                   {healthyServices}/{totalServices}
@@ -366,7 +368,7 @@ export default function DashboardPage() {
           <div className="panel p-4">
             <div className="mb-4 flex items-center gap-2">
               <HomeIcon size={15} className="text-[var(--accent-2)]" />
-              <h2 className="font-semibold">Cômodos Ativos</h2>
+              <h2 className="font-semibold">{t("dashboard.rooms")}</h2>
             </div>
             <div className="space-y-2">
               {rooms.map((room) => (
