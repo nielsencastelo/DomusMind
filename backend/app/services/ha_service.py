@@ -20,11 +20,33 @@ class HAService:
         }
 
     async def ping(self) -> dict[str, Any]:
+        if not self.token:
+            try:
+                async with httpx.AsyncClient(timeout=10) as client:
+                    r = await client.get(self.base_url)
+                return {
+                    "ok": r.status_code < 500,
+                    "status_code": r.status_code,
+                    "message": (
+                        "Home Assistant acessivel. Configure HASS_TOKEN para automacoes."
+                        if r.status_code < 500
+                        else r.text
+                    ),
+                }
+            except Exception as exc:
+                return {"ok": False, "status_code": None, "message": str(exc)}
+
         try:
             async with httpx.AsyncClient(timeout=10) as client:
                 r = await client.get(
                     f"{self.base_url}/api/", headers=self._headers
                 )
+            if r.status_code == 401:
+                return {
+                    "ok": False,
+                    "status_code": r.status_code,
+                    "message": "Home Assistant acessivel, mas HASS_TOKEN esta ausente ou invalido.",
+                }
             return {
                 "ok": r.is_success,
                 "status_code": r.status_code,
