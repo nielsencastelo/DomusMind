@@ -50,13 +50,16 @@ class VisionService:
     def __init__(self):
         self.device = torch_device()
         self._model: YOLO | None = None
+        self._model_path: str | None = None
 
     def _get_model(self, weights_path: str) -> YOLO:
         path = Path(weights_path)
         if not path.exists():
             raise FileNotFoundError(f"Peso YOLO não encontrado: {path}")
-        if self._model is None:
+        resolved_path = str(path.resolve())
+        if self._model is None or self._model_path != resolved_path:
             self._model = YOLO(str(path))
+            self._model_path = resolved_path
         return self._model
 
     @staticmethod
@@ -94,8 +97,9 @@ class VisionService:
             cap.release()
             return (
                 "Camera acessivel, mas o modelo YOLO nao esta instalado em "
-                f"{wp}. Configure GEMINI_API_KEY para descricao visual "
-                "ou adicione o arquivo de pesos no container."
+                f"{wp}. Baixe o modelo em Ajustes > Visao > YOLO, "
+                "configure GEMINI_API_KEY para descricao visual ou adicione "
+                "o arquivo de pesos no container."
             )
         instances: dict[str, list[int]] = defaultdict(list)
 

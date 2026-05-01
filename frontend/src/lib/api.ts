@@ -57,6 +57,20 @@ export type VisionConfig = {
   yolo_frames: number;
 };
 
+export type YoloModelInfo = {
+  name: string;
+  path: string;
+  installed: boolean;
+  size_bytes?: number | null;
+};
+
+export type YoloDownloadResponse = {
+  ok: boolean;
+  model: string;
+  path?: string | null;
+  message: string;
+};
+
 export type CameraTestResult = {
   ok: boolean;
   message: string;
@@ -262,6 +276,12 @@ export const api = {
       body: JSON.stringify(payload),
     }),
   localCameras: () => request<LocalCamera[]>("/api/v1/vision/local-cameras"),
+  yoloModels: () => request<YoloModelInfo[]>("/api/v1/vision/yolo/models"),
+  downloadYoloModel: (model: string) =>
+    request<YoloDownloadResponse>("/api/v1/vision/yolo/download", {
+      method: "POST",
+      body: JSON.stringify({ model }),
+    }),
   getLlmConfig: () => request<LlmConfig>("/api/v1/llm/config"),
   setLlmConfig: (payload: LlmConfig) =>
     request<LlmConfig>("/api/v1/llm/config", {

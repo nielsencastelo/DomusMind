@@ -129,6 +129,74 @@ async def set_vision_config(payload: VisionConfigIn, db: AsyncSession = Depends(
     return await get_vision_config(db)
 
 
+@router.get("/yolo/models", response_model=list[YoloModelInfo])
+async def list_yolo_models():
+    models_dir = _models_dir()
+    items: list[YoloModelInfo] = []
+    known = set(YOLO_MODEL_URLS)
+
+    for name in sorted(known):
+        path = models_dir / name
+        items.append(
+            YoloModelInfo(
+                name=name,
+                path=f"models/{name}",
+                installed=path.exists(),
+                size_bytes=path.stat().st_size if path.exists() else None,
+            )
+        )
+
+    for path in sorted(models_dir.glob("*.pt")):
+        if path.name in known:
+            continue
+        items.append(
+            YoloModelInfo(
+                name=path.name,
+                path=f"models/{path.name}",
+                installed=True,
+                size_bytes=path.stat().st_size,
+            )
+        )
+
+    return items
+
+
+@router.post("/yolo/download", response_model=YoloDownloadResponse)
+async def download_yolo_model(payload: YoloDownloadRequest, db: AsyncSession = Depends(get_db)):
+    import httpx
+    from app.repositories.config_repo import ConfigRepository
+
+    model = Path(payload.model).name
+    url = YOLO_MODEL_URLS.get(model)
+    if not url:
+        raise HTTPException(status_code=422, detail="Modelo YOLO nao suportado para download.")
+
+    destination = _models_dir() / model
+    partial = destination.with_suffix(destination.suffix + ".part")
+    rel_path = f"models/{model}"
+
+    if destination.exists():
+        await ConfigRepository(db).set("vision.yolo_weights", rel_path, "Caminho dos pesos YOLO")
+        return YoloDownloadResponse(ok=True, model=model, path=rel_path, message="Modelo ja instalado.")
+
+    try:
+        async with httpx.AsyncClient(timeout=None, follow_redirects=True) as client:
+            async with client.stream("GET", url) as response:
+                response.raise_for_status()
+                with partial.open("wb") as file:
+                    async for chunk in response.aiter_bytes():
+                        if chunk:
+                            file.write(chunk)
+        partial.replace(destination)
+    except Exception as exc:
+        if partial.exists():
+            partial.unlink()
+        return YoloDownloadResponse(ok=False, model=model, message=f"Falha ao baixar modelo: {exc}")
+
+    await ConfigRepository(db).set("vision.yolo_weights", rel_path, "Caminho dos pesos YOLO")
+    return YoloDownloadResponse(ok=True, model=model, path=rel_path, message="Modelo baixado e configurado.")
+
+
 # ── Describe ───────────────────────────────────────────────────────────────────
 
 @router.post("/describe", response_model=VisionResponse)

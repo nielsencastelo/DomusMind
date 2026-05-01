@@ -1,8 +1,8 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { Bot, Eye, Key, Save, Sliders } from "lucide-react";
-import { api, VisionConfig } from "@/lib/api";
+import { Bot, Download, Eye, Key, RefreshCw, Save, Sliders } from "lucide-react";
+import { api, VisionConfig, YoloModelInfo } from "@/lib/api";
 import { useI18n } from "@/hooks/useI18n";
 
 export default function VisionSettingsPage() {
@@ -13,6 +13,8 @@ export default function VisionSettingsPage() {
   const [confidence, setConfidence] = useState(0.6);
   const [frames, setFrames] = useState(10);
   const [busy, setBusy] = useState(false);
+  const [downloadBusy, setDownloadBusy] = useState("");
+  const [yoloModels, setYoloModels] = useState<YoloModelInfo[]>([]);
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
   const { t } = useI18n();
@@ -28,7 +30,38 @@ export default function VisionSettingsPage() {
         setFrames(cfg.yolo_frames);
       })
       .catch(() => setMessage("Nao foi possivel carregar configuracoes de visao."));
+    loadYoloModels();
   }, []);
+
+  async function loadYoloModels() {
+    try {
+      setYoloModels(await api.yoloModels());
+    } catch {
+      setYoloModels([]);
+    }
+  }
+
+  async function downloadModel(model: string) {
+    setDownloadBusy(model);
+    setMessage("");
+    setIsError(false);
+    try {
+      const result = await api.downloadYoloModel(model);
+      if (!result.ok) {
+        setIsError(true);
+        setMessage(result.message);
+        return;
+      }
+      if (result.path) setWeights(result.path);
+      setMessage(result.message);
+      await loadYoloModels();
+    } catch (err) {
+      setIsError(true);
+      setMessage(err instanceof Error ? err.message : "Falha ao baixar modelo YOLO.");
+    } finally {
+      setDownloadBusy("");
+    }
+  }
 
   async function save(event: FormEvent) {
     event.preventDefault();
@@ -151,6 +184,53 @@ export default function VisionSettingsPage() {
                 Caminho relativo ao diretorio /app dentro do container.
               </span>
             </label>
+            <div className="rounded-xl border border-[var(--line)]">
+              <div className="flex items-center justify-between gap-3 border-b border-[var(--line)] px-3 py-2">
+                <span className="text-sm font-medium">Modelos YOLO</span>
+                <button type="button" className="btn btn-secondary px-3 py-1.5 text-xs" onClick={loadYoloModels}>
+                  <RefreshCw size={13} />
+                  Atualizar
+                </button>
+              </div>
+              <div className="divide-y divide-[var(--line)]">
+                {yoloModels.map((model) => (
+                  <div key={model.name} className="flex flex-col gap-2 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+                    <button
+                      type="button"
+                      className="min-w-0 text-left"
+                      onClick={() => model.installed && setWeights(model.path)}
+                    >
+                      <div className="truncate text-sm font-medium">{model.name}</div>
+                      <div className="text-xs text-[var(--muted)]">
+                        {model.installed
+                          ? `Instalado em ${model.path}${model.size_bytes ? ` (${(model.size_bytes / 1024 / 1024).toFixed(1)} MB)` : ""}`
+                          : "Disponivel para download"}
+                      </div>
+                    </button>
+                    {model.installed ? (
+                      <button type="button" className="btn btn-secondary px-3 py-1.5 text-xs" onClick={() => setWeights(model.path)}>
+                        Usar
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="btn btn-secondary px-3 py-1.5 text-xs"
+                        disabled={!!downloadBusy}
+                        onClick={() => downloadModel(model.name)}
+                      >
+                        <Download size={13} />
+                        {downloadBusy === model.name ? "Baixando..." : "Baixar"}
+                      </button>
+                    )}
+                  </div>
+                ))}
+                {yoloModels.length === 0 && (
+                  <div className="px-3 py-4 text-sm text-[var(--muted)]">
+                    Nenhum modelo listado. Verifique o backend.
+                  </div>
+                )}
+              </div>
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <label>
                 <span className="label">Confianca minima ({(confidence * 100).toFixed(0)}%)</span>
