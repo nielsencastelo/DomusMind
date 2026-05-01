@@ -1,6 +1,6 @@
 """Clear saved camera passwords.
 
-Revision ID: 003_clear_default_camera_password
+Revision ID: 003
 Revises: 002
 Create Date: 2026-05-01
 """
@@ -8,7 +8,7 @@ Create Date: 2026-05-01
 from alembic import op
 
 
-revision = "003_clear_default_camera_password"
+revision = "003"
 down_revision = "002"
 branch_labels = None
 depends_on = None
