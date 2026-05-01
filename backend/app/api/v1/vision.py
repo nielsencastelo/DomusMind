@@ -1,6 +1,7 @@
 import base64
 import time
 from datetime import datetime, timezone
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -48,6 +49,41 @@ class VisionConfigIn(BaseModel):
     yolo_weights: str | None = None
     yolo_confidence: float | None = None
     yolo_frames: int | None = None
+
+
+class YoloModelInfo(BaseModel):
+    name: str
+    path: str
+    installed: bool
+    size_bytes: int | None = None
+
+
+class YoloDownloadRequest(BaseModel):
+    model: str
+
+
+class YoloDownloadResponse(BaseModel):
+    ok: bool
+    model: str
+    path: str | None = None
+    message: str
+
+
+YOLO_MODEL_URLS = {
+    "yolov8n.pt": "https://github.com/ultralytics/assets/releases/download/v8.3.0/yolov8n.pt",
+    "yolov8s.pt": "https://github.com/ultralytics/assets/releases/download/v8.3.0/yolov8s.pt",
+    "yolov8m.pt": "https://github.com/ultralytics/assets/releases/download/v8.3.0/yolov8m.pt",
+    "yolov8l.pt": "https://github.com/ultralytics/assets/releases/download/v8.3.0/yolov8l.pt",
+    "yolov8x.pt": "https://github.com/ultralytics/assets/releases/download/v8.3.0/yolov8x.pt",
+}
+
+
+def _models_dir() -> Path:
+    path = Path("/app/models")
+    if not path.exists():
+        path = Path("models")
+    path.mkdir(parents=True, exist_ok=True)
+    return path
 
 
 @router.get("/config", response_model=VisionConfigOut)
