@@ -1,18 +1,31 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
-import { Camera, CheckCircle2, Play, Plus, RefreshCw, Search } from "lucide-react";
-import { API_URL, api, Camera as CameraType, Room } from "@/lib/api";
+import { FormEvent, useEffect, useState } from "react";
+import {
+  Camera,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  Cpu,
+  MonitorPlay,
+  Play,
+  Plus,
+  RefreshCw,
+  Search,
+  Trash2,
+  Wifi,
+  X,
+} from "lucide-react";
+import { API_URL, api, Camera as CameraType, CameraTestResult, LocalCamera, Room } from "@/lib/api";
 
-function buildHikvisionUrl(form: CameraForm) {
-  const user = encodeURIComponent(form.username.trim());
-  const password = encodeURIComponent(form.password.trim());
-  const auth = user || password ? `${user}:${password}@` : "";
-  const channel = form.channel.trim() || "101";
-  return `rtsp://${auth}${form.ip.trim()}:${form.port || 554}/Streaming/Channels/${channel}`;
+function buildHikvisionUrl(ip: string, port: number, username: string, password: string, channel: string) {
+  const user = encodeURIComponent(username.trim());
+  const pass = encodeURIComponent(password.trim());
+  const auth = user || pass ? `${user}:${pass}@` : "";
+  return `rtsp://${auth}${ip.trim()}:${port}/Streaming/Channels/${channel || "101"}`;
 }
 
-type CameraForm = {
+type IpForm = {
   name: string;
   roomName: string;
   ip: string;
@@ -23,9 +36,9 @@ type CameraForm = {
   isDefault: boolean;
 };
 
-const initialForm: CameraForm = {
-  name: "Hikvision principal",
-  roomName: "entrada",
+const emptyForm: IpForm = {
+  name: "Camera principal",
+  roomName: "",
   ip: "192.168.2.218",
   port: 554,
   username: "",
@@ -34,41 +47,118 @@ const initialForm: CameraForm = {
   isDefault: true,
 };
 
+type StreamModalProps = { source: string; name: string; onClose: () => void };
+
+function StreamModal({ source, name, onClose }: StreamModalProps) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={onClose}>
+      <div className="relative w-full max-w-4xl rounded-2xl bg-[var(--surface)] shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between border-b border-[var(--line)] px-5 py-3">
+          <span className="font-semibold">{name}</span>
+          <button onClick={onClose} className="rounded-lg p-1.5 hover:bg-[var(--soft)]">
+            <X size={18} />
+          </button>
+        </div>
+        <div className="aspect-video bg-black">
+          <img src={source} alt={name} className="h-full w-full object-contain" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function VisionPage() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [cameras, setCameras] = useState<CameraType[]>([]);
+  const [localCameras, setLocalCameras] = useState<LocalCamera[]>([]);
+  const [loadingLocal, setLoadingLocal] = useState(false);
+
+  const [streamModal, setStreamModal] = useState<{ source: string; name: string } | null>(null);
   const [selectedRoom, setSelectedRoom] = useState("");
-  const [selectedCamera, setSelectedCamera] = useState<CameraType | null>(null);
-  const [form, setForm] = useState<CameraForm>(initialForm);
   const [description, setDescription] = useState("");
+  const [analyzeBusy, setAnalyzeBusy] = useState(false);
+
+  const [form, setForm] = useState<IpForm>(emptyForm);
+  const [formOpen, setFormOpen] = useState(false);
+  const [saveBusy, setSaveBusy] = useState(false);
+  const [saveMsg, setSaveMsg] = useState("");
+
+  const [testResult, setTestResult] = useState<CameraTestResult | null>(null);
+  const [testBusy, setTestBusy] = useState(false);
+
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
-  const [busy, setBusy] = useState(false);
 
   async function load() {
-    const nextRooms = await api.rooms();
-    setRooms(nextRooms);
-    const nextCameras = nextRooms.flatMap((room) => room.cameras);
-    setCameras(nextCameras);
-    if (!selectedCamera && nextCameras.length > 0) {
-      const camera = nextCameras.find((item) => item.is_default) ?? nextCameras[0];
-      setSelectedCamera(camera);
-      const room = nextRooms.find((item) => item.cameras.some((roomCamera) => roomCamera.id === camera.id));
-      setSelectedRoom(room?.name ?? "");
+    try {
+      const nextRooms = await api.rooms();
+      setRooms(nextRooms);
+      setCameras(nextRooms.flatMap((r) => r.cameras));
+    } catch {
+      setMessage("Nao foi possivel carregar cameras.");
+    }
+  }
+
+  async function scanLocal() {
+    setLoadingLocal(true);
+    try {
+      setLocalCameras(await api.localCameras());
+    } catch {
+      setMessage("Falha ao escanear cameras locais.");
+    } finally {
+      setLoadingLocal(false);
     }
   }
 
   useEffect(() => {
-    load().catch(() => setMessage("Nao foi possivel carregar cameras."));
+    load();
+    scanLocal();
   }, []);
 
-  const previewUrl = useMemo(() => buildHikvisionUrl(form), [form]);
-  const streamUrl = selectedRoom ? `${API_URL}/api/v1/vision/stream/${selectedRoom}` : `${API_URL}/api/v1/vision/stream/default`;
+  const previewUrl = buildHikvisionUrl(form.ip, form.port, form.username, form.password, form.channel);
+
+  async function testCamera() {
+    setTestBusy(true);
+    setTestResult(null);
+    try {
+      const result = await api.testCamera({
+        source_url: previewUrl,
+        username: form.username || undefined,
+        password: form.password || undefined,
+      });
+      setTestResult(result);
+    } catch (err) {
+      setTestResult({ ok: false, message: err instanceof Error ? err.message : "Falha ao testar." });
+    } finally {
+      setTestBusy(false);
+    }
+  }
+
+  async function testExistingCamera(cam: CameraType) {
+    setTestBusy(true);
+    setTestResult(null);
+    setMessage(`Testando ${cam.name}...`);
+    try {
+      const result = await api.testCamera({
+        source_url: cam.source_url,
+        username: cam.username ?? undefined,
+        password: cam.password ?? undefined,
+      });
+      setTestResult(result);
+      setMessage("");
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "Falha ao testar.");
+    } finally {
+      setTestBusy(false);
+    }
+  }
 
   async function saveCamera(event: FormEvent) {
     event.preventDefault();
-    setMessage("");
+    setSaveBusy(true);
+    setSaveMsg("");
     try {
-      const camera = await api.createIpCamera({
+      await api.createIpCamera({
         name: form.name,
         ip: form.ip,
         room_name: form.roomName,
@@ -78,31 +168,33 @@ export default function VisionPage() {
         channel: form.channel,
         is_default: form.isDefault,
       });
-      setSelectedCamera(camera);
-      setSelectedRoom(form.roomName.trim().toLowerCase());
-      setMessage("Camera IP salva.");
+      setSaveMsg("Camera salva com sucesso.");
+      setForm(emptyForm);
+      setFormOpen(false);
+      setTestResult(null);
       await load();
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : "Falha ao salvar camera.");
+      setSaveMsg(err instanceof Error ? err.message : "Falha ao salvar.");
+    } finally {
+      setSaveBusy(false);
     }
   }
 
-  async function testSource(source: string) {
-    setBusy(true);
-    setMessage("Testando captura...");
+  async function deleteCamera(id: string) {
+    setDeleteId(id);
     try {
-      const result = await api.testVisionSource(source);
-      setMessage(result.message);
+      await api.deleteCamera(id);
+      await load();
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : "Falha ao testar camera.");
+      setMessage(err instanceof Error ? err.message : "Falha ao remover camera.");
     } finally {
-      setBusy(false);
+      setDeleteId(null);
     }
   }
 
   async function analyze(event: FormEvent) {
     event.preventDefault();
-    setBusy(true);
+    setAnalyzeBusy(true);
     setDescription("");
     try {
       const data = await api.describeVision(selectedRoom || null);
@@ -110,148 +202,308 @@ export default function VisionPage() {
     } catch {
       setDescription("Nao foi possivel analisar a camera.");
     } finally {
-      setBusy(false);
+      setAnalyzeBusy(false);
     }
   }
 
   return (
-    <section className="space-y-5">
+    <section className="space-y-6">
+      {streamModal && (
+        <StreamModal
+          source={`${API_URL}/api/v1/vision/stream/${streamModal.source}`}
+          name={streamModal.name}
+          onClose={() => setStreamModal(null)}
+        />
+      )}
+
       <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-end">
         <div>
-          <div className="chip mb-3">Cameras IP e visao computacional</div>
+          <div className="chip mb-3">Cameras e visao computacional</div>
           <h1 className="page-title">Central de visao</h1>
           <p className="mt-2 max-w-2xl text-sm text-[var(--muted)]">
-            Cadastre cameras Hikvision por IP, valide a captura e envie a cena para analise.
+            Gerencie cameras IP e locais, teste conexoes sem LLM e analise cenas com IA.
           </p>
         </div>
-        <button className="btn btn-secondary w-fit" onClick={() => load()}>
-          <RefreshCw size={16} />
-          Recarregar
-        </button>
+        <div className="flex gap-2">
+          <button className="btn btn-secondary" onClick={() => { load(); scanLocal(); }}>
+            <RefreshCw size={16} />
+            Recarregar
+          </button>
+          <button className="btn" onClick={() => setFormOpen((v) => !v)}>
+            <Plus size={16} />
+            Nova camera
+          </button>
+        </div>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[1fr_24rem]">
-        <div className="space-y-4">
-          <div className="panel overflow-hidden">
-            <div className="flex flex-col justify-between gap-3 border-b border-[var(--line)] px-4 py-3 md:flex-row md:items-center">
-              <div className="flex items-center gap-2 font-medium">
-                <Camera size={17} />
-                {selectedCamera?.name || "camera padrao"}
-              </div>
-              <select
-                className="control max-w-sm"
-                value={selectedCamera?.id ?? ""}
-                onChange={(event) => {
-                  const camera = cameras.find((item) => item.id === event.target.value) ?? null;
-                  setSelectedCamera(camera);
-                  const room = rooms.find((item) => item.cameras.some((cam) => cam.id === camera?.id));
-                  setSelectedRoom(room?.name ?? "");
-                }}
-              >
-                <option value="">Padrao</option>
-                {cameras.map((camera) => (
-                  <option key={camera.id} value={camera.id}>
-                    {camera.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="aspect-video bg-[#102022]">
-              <img key={streamUrl} src={streamUrl} alt="Feed da camera" className="h-full w-full object-contain" />
-            </div>
-          </div>
-
-          <div className="grid gap-4 lg:grid-cols-[20rem_1fr]">
-            <form onSubmit={analyze} className="panel space-y-3 p-4">
-              <label>
-                <span className="label">Comodo da analise</span>
-                <select className="control" value={selectedRoom} onChange={(event) => setSelectedRoom(event.target.value)}>
-                  <option value="">Padrao</option>
-                  {rooms.map((room) => (
-                    <option key={room.id} value={room.name}>
-                      {room.friendly_name || room.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <button className="btn btn-accent w-full" disabled={busy}>
-                <Search size={16} />
-                {busy ? "Processando" : "Analisar cena"}
-              </button>
-              {selectedCamera && (
-                <button type="button" className="btn btn-secondary w-full" disabled={busy} onClick={() => testSource(selectedCamera.source_url)}>
-                  <Play size={16} />
-                  Testar camera salva
-                </button>
-              )}
-            </form>
-
-            <div className="panel p-4 text-sm leading-6 text-[var(--muted)]">
-              <div className="mb-2 flex items-center gap-2 font-semibold text-[var(--ink)]">
-                <CheckCircle2 size={16} />
-                Resultado
-              </div>
-              {description || message || "A descricao da cena e os testes de conexao aparecem aqui."}
-            </div>
-          </div>
+      {message && (
+        <div className="rounded-xl bg-red-500/10 border border-red-500/30 px-4 py-3 text-sm text-red-400">
+          {message}
+          <button className="ml-3 underline" onClick={() => setMessage("")}>fechar</button>
         </div>
+      )}
 
-        <aside className="panel h-fit p-4">
-          <h2 className="mb-4 font-semibold">Nova camera Hikvision</h2>
-          <form onSubmit={saveCamera} className="space-y-3">
-            <label>
-              <span className="label">Nome</span>
-              <input className="control" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
-            </label>
-            <label>
-              <span className="label">Comodo</span>
-              <input className="control" value={form.roomName} onChange={(event) => setForm({ ...form, roomName: event.target.value })} />
-            </label>
-            <div className="grid grid-cols-[1fr_5.5rem] gap-2">
+      {/* Add camera form */}
+      {formOpen && (
+        <div className="panel p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="font-semibold flex items-center gap-2"><Plus size={16} />Nova camera Hikvision / RTSP</h2>
+            <button onClick={() => setFormOpen(false)} className="rounded-lg p-1.5 hover:bg-[var(--soft)]">
+              <X size={16} />
+            </button>
+          </div>
+          <form onSubmit={saveCamera} className="space-y-4">
+            <div className="grid gap-4 lg:grid-cols-2">
               <label>
-                <span className="label">IP</span>
-                <input className="control" value={form.ip} onChange={(event) => setForm({ ...form, ip: event.target.value })} />
+                <span className="label">Nome</span>
+                <input className="control" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+              </label>
+              <label>
+                <span className="label">Comodo</span>
+                <input className="control" value={form.roomName} onChange={(e) => setForm({ ...form, roomName: e.target.value })} placeholder="sala, entrada, garagem..." />
+              </label>
+            </div>
+            <div className="grid gap-4 lg:grid-cols-[1fr_7rem_1fr_1fr]">
+              <label>
+                <span className="label">IP / Host</span>
+                <input className="control" value={form.ip} onChange={(e) => setForm({ ...form, ip: e.target.value })} required />
               </label>
               <label>
                 <span className="label">Porta</span>
-                <input className="control" type="number" value={form.port} onChange={(event) => setForm({ ...form, port: Number(event.target.value) })} />
+                <input className="control" type="number" value={form.port} onChange={(e) => setForm({ ...form, port: Number(e.target.value) })} />
               </label>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
               <label>
                 <span className="label">Usuario</span>
-                <input className="control" value={form.username} onChange={(event) => setForm({ ...form, username: event.target.value })} />
+                <input className="control" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} />
               </label>
               <label>
                 <span className="label">Senha</span>
-                <input className="control" type="password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} />
+                <input className="control" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
               </label>
             </div>
-            <label>
-              <span className="label">Canal</span>
-              <select className="control" value={form.channel} onChange={(event) => setForm({ ...form, channel: event.target.value })}>
-                <option value="101">101 principal</option>
-                <option value="102">102 substream</option>
-                <option value="201">201 canal 2</option>
-                <option value="202">202 canal 2 substream</option>
-              </select>
-            </label>
-            <label className="flex items-center gap-2 text-sm text-[var(--muted)]">
-              <input type="checkbox" checked={form.isDefault} onChange={(event) => setForm({ ...form, isDefault: event.target.checked })} />
-              Tornar padrao do comodo
-            </label>
-            <div className="break-all rounded-xl bg-[var(--soft)] p-3 text-xs text-[var(--muted)]">{previewUrl}</div>
-            <div className="grid grid-cols-2 gap-2">
-              <button type="button" className="btn btn-secondary" disabled={busy} onClick={() => testSource(previewUrl)}>
+            <div className="grid gap-4 lg:grid-cols-[12rem_1fr]">
+              <label>
+                <span className="label">Canal</span>
+                <select className="control" value={form.channel} onChange={(e) => setForm({ ...form, channel: e.target.value })}>
+                  <option value="101">101 — principal</option>
+                  <option value="102">102 — substream</option>
+                  <option value="201">201 — canal 2</option>
+                  <option value="202">202 — canal 2 sub</option>
+                </select>
+              </label>
+              <label className="flex items-center gap-2 mt-6 text-sm text-[var(--muted)]">
+                <input type="checkbox" checked={form.isDefault} onChange={(e) => setForm({ ...form, isDefault: e.target.checked })} />
+                Tornar camera padrao do comodo
+              </label>
+            </div>
+
+            <div className="rounded-xl bg-[var(--soft)] px-3 py-2 text-xs break-all text-[var(--muted)]">
+              {previewUrl}
+            </div>
+
+            {/* Test result */}
+            {testResult && (
+              <div className={`rounded-xl border p-4 space-y-3 ${testResult.ok ? "border-[var(--accent)]/30 bg-[var(--accent)]/5" : "border-red-500/30 bg-red-500/5"}`}>
+                <div className={`flex items-center gap-2 font-medium text-sm ${testResult.ok ? "text-[var(--accent)]" : "text-red-400"}`}>
+                  <CheckCircle2 size={15} />
+                  {testResult.message}
+                </div>
+                {testResult.ok && (
+                  <div className="grid grid-cols-3 gap-3 text-xs text-[var(--muted)]">
+                    {testResult.resolution && <span>Resolucao: <strong>{testResult.resolution}</strong></span>}
+                    {testResult.fps && <span>FPS: <strong>{testResult.fps}</strong></span>}
+                    {testResult.latency_ms && <span>Latencia: <strong>{testResult.latency_ms}ms</strong></span>}
+                  </div>
+                )}
+                {testResult.snapshot_base64 && (
+                  <img src={testResult.snapshot_base64} alt="snapshot" className="w-full max-h-48 object-contain rounded-lg" />
+                )}
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <button type="button" className="btn btn-secondary flex-1" disabled={testBusy} onClick={testCamera}>
                 <Play size={16} />
-                Testar
+                {testBusy ? "Testando..." : "Testar conexao"}
               </button>
-              <button className="btn">
+              <button type="submit" className="btn flex-1" disabled={saveBusy}>
                 <Plus size={16} />
-                Salvar
+                {saveBusy ? "Salvando..." : "Salvar camera"}
               </button>
             </div>
+            {saveMsg && <p className="text-sm text-[var(--accent)]">{saveMsg}</p>}
           </form>
+        </div>
+      )}
+
+      <div className="grid gap-6 xl:grid-cols-[1fr_22rem]">
+        <div className="space-y-5">
+          {/* IP cameras list */}
+          <div className="panel overflow-hidden">
+            <div className="flex items-center gap-2 border-b border-[var(--line)] px-5 py-3 font-semibold">
+              <Wifi size={16} />
+              Cameras registradas ({cameras.length})
+            </div>
+            {cameras.length === 0 ? (
+              <div className="p-8 text-center text-sm text-[var(--muted)]">
+                Nenhuma camera cadastrada. Clique em "Nova camera" para adicionar.
+              </div>
+            ) : (
+              <div className="divide-y divide-[var(--line)]">
+                {cameras.map((cam) => {
+                  const room = rooms.find((r) => r.cameras.some((c) => c.id === cam.id));
+                  return (
+                    <div key={cam.id} className="flex flex-col gap-3 p-4 md:flex-row md:items-center">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <Camera size={15} className="text-[var(--accent)] shrink-0" />
+                          <span className="font-medium truncate">{cam.name}</span>
+                          {cam.is_default && (
+                            <span className="rounded-full bg-[var(--accent)]/15 px-2 py-0.5 text-xs text-[var(--accent)]">padrao</span>
+                          )}
+                        </div>
+                        <div className="mt-1 text-xs text-[var(--muted)] truncate">{cam.source_url}</div>
+                        <div className="mt-1 flex gap-3 text-xs text-[var(--muted)]">
+                          {room && <span>Comodo: {room.friendly_name || room.name}</span>}
+                          {cam.resolution && <span>Resolucao: {cam.resolution}</span>}
+                          {cam.last_seen_at && <span>Visto: {new Date(cam.last_seen_at).toLocaleString("pt-BR")}</span>}
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 gap-2">
+                        <button
+                          className="btn btn-secondary px-3 py-1.5 text-xs"
+                          disabled={testBusy}
+                          onClick={() => testExistingCamera(cam)}
+                        >
+                          <Play size={13} />
+                          Testar
+                        </button>
+                        <button
+                          className="btn btn-secondary px-3 py-1.5 text-xs"
+                          onClick={() => setStreamModal({ source: room?.name ?? "default", name: cam.name })}
+                        >
+                          <MonitorPlay size={13} />
+                          Stream
+                        </button>
+                        <button
+                          className="rounded-lg border border-red-500/30 px-3 py-1.5 text-xs text-red-400 hover:bg-red-500/10 transition-colors"
+                          disabled={deleteId === cam.id}
+                          onClick={() => deleteCamera(cam.id)}
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Local cameras */}
+          <div className="panel overflow-hidden">
+            <div className="flex items-center justify-between border-b border-[var(--line)] px-5 py-3">
+              <div className="flex items-center gap-2 font-semibold">
+                <Cpu size={16} />
+                Cameras locais detectadas ({localCameras.length})
+              </div>
+              <button className="btn btn-secondary px-3 py-1.5 text-xs" disabled={loadingLocal} onClick={scanLocal}>
+                <RefreshCw size={13} className={loadingLocal ? "animate-spin" : ""} />
+                Escanear
+              </button>
+            </div>
+            {localCameras.length === 0 ? (
+              <div className="p-8 text-center text-sm text-[var(--muted)]">
+                {loadingLocal ? "Escaneando dispositivos..." : "Nenhuma camera local detectada."}
+              </div>
+            ) : (
+              <div className="divide-y divide-[var(--line)]">
+                {localCameras.map((cam) => (
+                  <div key={cam.index} className="flex items-center gap-4 p-4">
+                    <div className="flex-1">
+                      <div className="font-medium">Webcam #{cam.index}</div>
+                      <div className="mt-0.5 text-xs text-[var(--muted)]">{cam.device_path} — {cam.resolution}</div>
+                    </div>
+                    <button
+                      className="btn btn-secondary px-3 py-1.5 text-xs"
+                      onClick={() => setForm({ ...emptyForm, name: `Webcam ${cam.index}`, ip: cam.source_url, channel: "" })}
+                    >
+                      <Plus size={13} />
+                      Adicionar
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Scene analysis sidebar */}
+        <aside className="space-y-4">
+          <form onSubmit={analyze} className="panel p-5 space-y-4">
+            <h2 className="flex items-center gap-2 font-semibold">
+              <Search size={16} />
+              Analise de cena
+            </h2>
+            <label>
+              <span className="label">Comodo</span>
+              <select className="control" value={selectedRoom} onChange={(e) => setSelectedRoom(e.target.value)}>
+                <option value="">Camera padrao</option>
+                {rooms.map((room) => (
+                  <option key={room.id} value={room.name}>
+                    {room.friendly_name || room.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button className="btn btn-accent w-full" disabled={analyzeBusy}>
+              <Search size={16} />
+              {analyzeBusy ? "Processando..." : "Analisar com IA"}
+            </button>
+            {description && (
+              <div className="rounded-xl bg-[var(--soft)] p-4 text-sm leading-6 text-[var(--muted)]">
+                <div className="mb-2 flex items-center gap-2 font-semibold text-[var(--ink)]">
+                  <CheckCircle2 size={14} />
+                  Resultado
+                </div>
+                {description}
+              </div>
+            )}
+          </form>
+
+          {/* Live stream preview */}
+          {cameras.length > 0 && (
+            <div className="panel overflow-hidden">
+              <div className="border-b border-[var(--line)] px-4 py-3 text-sm font-semibold flex items-center gap-2">
+                <MonitorPlay size={15} />
+                Stream ao vivo
+              </div>
+              <select
+                className="control m-3"
+                onChange={(e) => {
+                  if (e.target.value) {
+                    const room = rooms.find((r) => r.cameras.some((c) => c.id === e.target.value));
+                    setSelectedRoom(room?.name ?? "");
+                  }
+                }}
+              >
+                <option value="">Selecione uma camera</option>
+                {cameras.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+              {selectedRoom && (
+                <div className="aspect-video bg-black">
+                  <img
+                    key={selectedRoom}
+                    src={`${API_URL}/api/v1/vision/stream/${selectedRoom}`}
+                    alt="Live stream"
+                    className="h-full w-full object-contain"
+                  />
+                </div>
+              )}
+            </div>
+          )}
         </aside>
       </div>
     </section>

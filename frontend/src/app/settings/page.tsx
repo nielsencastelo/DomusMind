@@ -56,6 +56,9 @@ export default function SettingsPage() {
           <Link className="btn btn-secondary" href="/settings/llm">
             LLM
           </Link>
+          <Link className="btn btn-secondary" href="/settings/vision">
+            Visao
+          </Link>
         </div>
         <div className="mt-5 divide-y divide-[var(--line)] border border-[var(--line)] bg-[var(--panel)]">
           {entries.map((entry) => (

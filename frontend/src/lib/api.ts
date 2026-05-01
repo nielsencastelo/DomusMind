@@ -40,7 +40,37 @@ export type Camera = {
   username?: string | null;
   password?: string | null;
   is_default: boolean;
+  camera_type?: string;
+  channel?: number | null;
+  is_local?: boolean;
+  device_path?: string | null;
+  last_seen_at?: string | null;
+  resolution?: string | null;
   created_at: string;
+};
+
+export type VisionConfig = {
+  provider: "yolo" | "gemini";
+  gemini_key_set: boolean;
+  yolo_weights: string;
+  yolo_confidence: number;
+  yolo_frames: number;
+};
+
+export type CameraTestResult = {
+  ok: boolean;
+  message: string;
+  latency_ms?: number | null;
+  resolution?: string | null;
+  fps?: number | null;
+  snapshot_base64?: string | null;
+};
+
+export type LocalCamera = {
+  index: number;
+  device_path: string;
+  resolution: string;
+  source_url: string;
 };
 
 export type AgentKey = "geral" | "intent" | "visao" | "pesquisa" | "luz" | "memoria";
@@ -165,4 +195,26 @@ export const api = {
       method: "PUT",
       body: JSON.stringify({ value, description }),
     }),
+  deleteCamera: (cameraId: string) =>
+    request<{ ok: boolean; message: string }>(`/api/v1/devices/cameras/${cameraId}`, {
+      method: "DELETE",
+    }),
+  getVisionConfig: () => request<VisionConfig>("/api/v1/vision/config"),
+  setVisionConfig: (payload: {
+    provider: string;
+    gemini_api_key?: string;
+    yolo_weights?: string;
+    yolo_confidence?: number;
+    yolo_frames?: number;
+  }) =>
+    request<VisionConfig>("/api/v1/vision/config", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  testCamera: (payload: { source_url: string; username?: string; password?: string }) =>
+    request<CameraTestResult>("/api/v1/vision/test-camera", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  localCameras: () => request<LocalCamera[]>("/api/v1/vision/local-cameras"),
 };

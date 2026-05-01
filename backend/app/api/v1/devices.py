@@ -177,6 +177,20 @@ async def add_camera(
     return cam
 
 
+@router.delete("/cameras/{camera_id}", response_model=OkResponse)
+async def delete_camera(camera_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+    from sqlalchemy import select
+    from app.models.db_models import Camera
+
+    result = await db.execute(select(Camera).where(Camera.id == camera_id))
+    cam = result.scalar_one_or_none()
+    if not cam:
+        raise HTTPException(status_code=404, detail="Camera nao encontrada.")
+    await db.delete(cam)
+    await db.commit()
+    return OkResponse(ok=True, message="Camera removida.")
+
+
 @router.post("/rooms/{room_id}/devices", response_model=DeviceOut, status_code=201)
 async def add_device(
     room_id: uuid.UUID, payload: DeviceIn, db: AsyncSession = Depends(get_db)
