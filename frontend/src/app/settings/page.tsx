@@ -1,108 +1,92 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
-import { Save } from "lucide-react";
-import { api } from "@/lib/api";
+import {
+  Bot,
+  BrainCircuit,
+  Camera,
+  Database,
+  Home,
+  KeyRound,
+  MessageSquareText,
+  Settings2,
+} from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 
-type ConfigEntry = {
-  key: string;
-  value: unknown;
-  description?: string | null;
-};
+const sections = [
+  {
+    href: "/settings/llm",
+    title: "IA / LLM",
+    description: "Credenciais, modelos online, Ollama local e modelos disponiveis.",
+    icon: Bot,
+  },
+  {
+    href: "/settings/agents",
+    title: "Agentes",
+    description: "Escolha qual IA, modelo, temperatura e fallback cada agente usa.",
+    icon: BrainCircuit,
+  },
+  {
+    href: "/settings/embeddings",
+    title: "Embeddings",
+    description: "Configure Google ou Ollama local para memoria semantica e RAG.",
+    icon: Database,
+  },
+  {
+    href: "/settings/llm/test",
+    title: "Testar IA",
+    description: "Chat simples para testar conexao, resposta e erros dos modelos.",
+    icon: MessageSquareText,
+  },
+  {
+    href: "/settings/vision",
+    title: "Visao",
+    description: "Provider visual, Gemini Vision, YOLO, pesos e parametros.",
+    icon: Camera,
+  },
+  {
+    href: "/settings/rooms",
+    title: "Comodos e dispositivos",
+    description: "Cadastro de comodos, luzes e cameras vinculadas.",
+    icon: Home,
+  },
+  {
+    href: "/settings/system",
+    title: "Sistema avancado",
+    description: "Editor bruto de chaves internas do banco system_config.",
+    icon: Settings2,
+  },
+];
 
 export default function SettingsPage() {
-  const [entries, setEntries] = useState<ConfigEntry[]>([]);
-  const [keyName, setKeyName] = useState("assistant.name");
-  const [value, setValue] = useState('"DomusMind"');
-  const [description, setDescription] = useState("");
-  const [message, setMessage] = useState("");
   const { t } = useI18n();
 
-  async function load() {
-    setEntries(await api.config());
-  }
-
-  useEffect(() => {
-    load().catch(() => setEntries([]));
-  }, []);
-
-  async function save(event: FormEvent) {
-    event.preventDefault();
-    setMessage("");
-    let parsed: unknown = value;
-    try {
-      parsed = JSON.parse(value);
-    } catch {
-      parsed = value;
-    }
-    try {
-      await api.setConfig(keyName, parsed, description || undefined);
-      setMessage("Configuracao salva.");
-      await load();
-    } catch (err) {
-      setMessage(err instanceof Error ? err.message : "Falha ao salvar.");
-    }
-  }
-
   return (
-    <section className="grid gap-5 lg:grid-cols-[1fr_24rem]">
+    <section className="space-y-6">
       <div>
+        <div className="chip mb-3">
+          <KeyRound size={14} />
+          Configuracao operacional
+        </div>
         <h1 className="page-title">{t("settings.title")}</h1>
-        <p className="mt-2 text-sm text-[var(--muted)]">{t("settings.subtitle")}</p>
-        <div className="mt-4 flex flex-wrap gap-2">
-          <Link className="btn btn-secondary" href="/settings/rooms">
-            {t("settings.rooms")}
-          </Link>
-          <Link className="btn btn-secondary" href="/settings/llm">
-            {t("settings.llm")}
-          </Link>
-          <Link className="btn btn-secondary" href="/settings/vision">
-            {t("settings.vision")}
-          </Link>
-        </div>
-        <div className="mt-5 divide-y divide-[var(--line)] border border-[var(--line)] bg-[var(--panel)]">
-          {entries.map((entry) => (
-            <button
-              key={entry.key}
-              className="block w-full px-4 py-3 text-left hover:bg-[var(--soft)]"
-              onClick={() => {
-                setKeyName(entry.key);
-                setValue(JSON.stringify(entry.value, null, 2));
-                setDescription(entry.description || "");
-              }}
-            >
-              <div className="font-medium">{entry.key}</div>
-              <div className="mt-1 truncate text-sm text-[var(--muted)]">{JSON.stringify(entry.value)}</div>
-            </button>
-          ))}
-          {entries.length === 0 && <div className="p-5 text-sm text-[var(--muted)]">{t("settings.empty")}</div>}
-        </div>
+        <p className="mt-2 max-w-2xl text-sm text-[var(--muted)]">
+          Ajuste modelos de IA, provedores, embeddings, visao e dispositivos em areas separadas.
+        </p>
       </div>
 
-      <aside className="panel h-fit p-4">
-        <h2 className="mb-4 font-semibold">{t("settings.editKey")}</h2>
-        <form onSubmit={save} className="space-y-3">
-          <label>
-            <span className="label">Chave</span>
-            <input className="control" value={keyName} onChange={(event) => setKeyName(event.target.value)} />
-          </label>
-          <label>
-            <span className="label">Valor JSON</span>
-            <textarea className="control min-h-36" value={value} onChange={(event) => setValue(event.target.value)} />
-          </label>
-          <label>
-            <span className="label">Descricao</span>
-            <input className="control" value={description} onChange={(event) => setDescription(event.target.value)} />
-          </label>
-          <button className="btn w-full">
-            <Save size={16} />
-            Salvar
-          </button>
-          {message && <p className="text-sm text-[var(--muted)]">{message}</p>}
-        </form>
-      </aside>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {sections.map(({ href, title, description, icon: Icon }) => (
+          <Link key={href} href={href} className="panel block p-5 transition hover:-translate-y-0.5 hover:border-[var(--accent)]/40">
+            <div className="mb-4 flex items-center gap-3">
+              <span className="grid h-10 w-10 place-items-center rounded-lg bg-[var(--soft)] text-[var(--accent)]">
+                <Icon size={19} />
+              </span>
+              <h2 className="font-semibold">{title}</h2>
+            </div>
+            <p className="text-sm leading-6 text-[var(--muted)]">{description}</p>
+          </Link>
+        ))}
+      </div>
     </section>
   );
 }

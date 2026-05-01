@@ -1,157 +1,170 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { Brain, Save, SlidersHorizontal } from "lucide-react";
-import { AgentKey, ProviderKey, api } from "@/lib/api";
+import { Bot, RefreshCw, Save, Server, Sparkles } from "lucide-react";
+import { api, LlmConfig, ModelInfo, ProviderKey } from "@/lib/api";
 
-type AgentConfig = {
-  provider: ProviderKey;
-  model: string;
-  temperature: number;
-  fallback: ProviderKey[];
-};
-
-const agents: Array<{ key: AgentKey; label: string; hint: string }> = [
-  { key: "geral", label: "Agente geral", hint: "Resposta final, comandos livres e conversa." },
-  { key: "intent", label: "Classificador", hint: "Detecta intencao antes do fluxo principal." },
-  { key: "visao", label: "Visao", hint: "Responde usando contexto de camera." },
-  { key: "pesquisa", label: "Pesquisa", hint: "Resume resultados de busca." },
-  { key: "luz", label: "Automacao", hint: "Interpreta e responde comandos de dispositivos." },
-  { key: "memoria", label: "Memoria", hint: "Testes e respostas apoiadas em contexto RAG." },
+const providers: Array<{ key: ProviderKey; label: string; hint: string }> = [
+  { key: "gemini", label: "Gemini", hint: "Google AI Studio / Gemini API" },
+  { key: "openai", label: "OpenAI / GPT", hint: "Modelos GPT via OpenAI API" },
+  { key: "claude", label: "Claude", hint: "Anthropic Messages API" },
+  { key: "local", label: "Ollama local", hint: "Modelos instalados no seu Ollama" },
 ];
 
-const providerModels: Record<ProviderKey, string> = {
-  local: "llama3.1",
-  gemini: "gemini-2.0-flash",
-  openai: "gpt-4o-mini",
-  claude: "claude-3-5-haiku-latest",
-};
-
-function defaultConfig(provider: ProviderKey = "gemini"): AgentConfig {
+function emptyConfig(): LlmConfig {
   return {
-    provider,
-    model: providerModels[provider],
-    temperature: 0.2,
-    fallback: provider === "local" ? ["gemini", "openai"] : ["local", "openai", "claude"],
+    providers: {
+      local: { base_url: "http://host.docker.internal:11434", default_model: "phi4" },
+      gemini: { api_key: "", default_model: "gemini-2.0-flash" },
+      openai: { api_key: "", default_model: "gpt-4o" },
+      claude: { api_key: "", default_model: "claude-sonnet-4-6" },
+    },
+    agents: {},
+    embedding: { provider: "local", model: "nomic-embed-text" },
   };
 }
 
-export default function LlmSettingsPage() {
-  const [configs, setConfigs] = useState<Record<AgentKey, AgentConfig>>(() =>
-    Object.fromEntries(agents.map((agent) => [agent.key, defaultConfig(agent.key === "intent" ? "local" : "gemini")])) as Record<AgentKey, AgentConfig>,
-  );
+export default function LlmProvidersPage() {
+  const [config, setConfig] = useState<LlmConfig>(emptyConfig);
+  const [models, setModels] = useState<Partial<Record<ProviderKey, ModelInfo[]>>>({});
+  const [modelMessages, setModelMessages] = useState<Partial<Record<ProviderKey, string>>>({});
   const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    api
-      .config()
-      .then((entries) => {
-        const entry = entries.find((item) => item.key === "llm.agents");
-        if (entry?.value && typeof entry.value === "object") {
-          const value = entry.value as Partial<Record<AgentKey, Partial<AgentConfig>>>;
-          setConfigs((current) => {
-            const next = { ...current };
-            for (const agent of agents) {
-              next[agent.key] = { ...next[agent.key], ...(value[agent.key] ?? {}) };
-            }
-            return next;
-          });
-        }
-      })
-      .catch(() => undefined);
+    api.getLlmConfig().then(setConfig).catch(() => undefined);
   }, []);
 
-  function update(agent: AgentKey, patch: Partial<AgentConfig>) {
-    setConfigs((current) => ({ ...current, [agent]: { ...current[agent], ...patch } }));
+  function updateProvider(provider: ProviderKey, patch: Record<string, string>) {
+    setConfig((current) => ({
+      ...current,
+      providers: {
+        ...current.providers,
+        [provider]: { ...(current.providers[provider] ?? {}), ...patch },
+      },
+    }));
   }
 
-  async function submit(event: FormEvent) {
+  async function loadModels(provider: ProviderKey) {
+    setModelMessages((current) => ({ ...current, [provider]: "Carregando modelos..." }));
+    try {
+      const result = await api.llmModels(provider);
+      setModels((current) => ({ ...current, [provider]: result.models }));
+      setModelMessages((current) => ({
+        ...current,
+        [provider]: result.ok ? `${result.models.length} modelo(s) encontrado(s).` : result.message,
+      }));
+    } catch (err) {
+      setModelMessages((current) => ({
+        ...current,
+        [provider]: err instanceof Error ? err.message : "Falha ao listar modelos.",
+      }));
+    }
+  }
+
+  async function save(event: FormEvent) {
     event.preventDefault();
+    setBusy(true);
     setMessage("");
     try {
-      await api.setConfig("llm.agents", configs, "Provider, modelo e fallback por agente do DomusMind");
-      await api.setConfig("llm.primary_provider", configs.geral.provider, "Compatibilidade com o roteador LLM");
-      await api.setConfig("llm.fallback_chain", configs.geral.fallback.join(","), "Fallback padrao");
-      setMessage("Configuracoes de LLM salvas.");
+      const saved = await api.setLlmConfig(config);
+      setConfig(saved);
+      setMessage("Configuracoes de IA salvas.");
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : "Falha ao salvar LLM.");
+      setMessage(err instanceof Error ? err.message : "Falha ao salvar configuracoes.");
+    } finally {
+      setBusy(false);
     }
   }
 
   return (
-    <section className="space-y-5">
+    <section className="space-y-6">
       <div>
-        <div className="chip mb-3">
-          <Brain size={14} />
-          Roteamento de modelos
-        </div>
-        <h1 className="page-title">LLM por agente</h1>
+        <div className="chip mb-3"><Bot size={14} /> IA / LLM</div>
+        <h1 className="page-title">Provedores e modelos</h1>
         <p className="mt-2 max-w-2xl text-sm text-[var(--muted)]">
-          Escolha modelos locais ou online para cada etapa do DomusMind, com fallback por agente.
+          Configure credenciais online, Ollama local e carregue a lista real de modelos disponiveis.
         </p>
       </div>
 
-      <form onSubmit={submit} className="space-y-4">
+      <form onSubmit={save} className="space-y-4">
         <div className="grid gap-4 xl:grid-cols-2">
-          {agents.map((agent) => {
-            const config = configs[agent.key];
+          {providers.map((provider) => {
+            const cfg = config.providers[provider.key] ?? {};
+            const availableModels = models[provider.key] ?? [];
             return (
-              <article key={agent.key} className="panel p-4">
+              <article key={provider.key} className="panel p-5">
                 <div className="mb-4 flex items-start justify-between gap-3">
                   <div>
-                    <h2 className="font-semibold">{agent.label}</h2>
-                    <p className="mt-1 text-sm text-[var(--muted)]">{agent.hint}</p>
+                    <h2 className="flex items-center gap-2 font-semibold">
+                      {provider.key === "local" ? <Server size={17} /> : <Sparkles size={17} />}
+                      {provider.label}
+                    </h2>
+                    <p className="mt-1 text-sm text-[var(--muted)]">{provider.hint}</p>
                   </div>
-                  <SlidersHorizontal size={18} className="text-[var(--accent)]" />
+                  <button type="button" className="btn btn-secondary px-3 py-1.5 text-xs" onClick={() => loadModels(provider.key)}>
+                    <RefreshCw size={13} />
+                    Modelos
+                  </button>
                 </div>
-                <div className="grid gap-3 md:grid-cols-2">
+
+                <div className="space-y-3">
+                  {provider.key === "local" ? (
+                    <label>
+                      <span className="label">OLLAMA_BASE_URL</span>
+                      <input
+                        className="control"
+                        value={cfg.base_url ?? ""}
+                        onChange={(event) => updateProvider(provider.key, { base_url: event.target.value })}
+                      />
+                    </label>
+                  ) : (
+                    <label>
+                      <span className="label">API key</span>
+                      <input
+                        className="control"
+                        type="password"
+                        value={cfg.api_key ?? ""}
+                        onChange={(event) => updateProvider(provider.key, { api_key: event.target.value })}
+                        placeholder="Cole a chave do provedor"
+                      />
+                    </label>
+                  )}
+
                   <label>
-                    <span className="label">Provider</span>
-                    <select
-                      className="control"
-                      value={config.provider}
-                      onChange={(event) => {
-                        const provider = event.target.value as ProviderKey;
-                        update(agent.key, { provider, model: providerModels[provider] });
-                      }}
-                    >
-                      <option value="local">Local/Ollama</option>
-                      <option value="gemini">Gemini</option>
-                      <option value="openai">OpenAI/GPT</option>
-                      <option value="claude">Claude</option>
-                    </select>
-                  </label>
-                  <label>
-                    <span className="label">Temperatura</span>
+                    <span className="label">Modelo padrao</span>
                     <input
                       className="control"
-                      type="number"
-                      min="0"
-                      max="1"
-                      step="0.1"
-                      value={config.temperature}
-                      onChange={(event) => update(agent.key, { temperature: Number(event.target.value) })}
+                      list={`models-${provider.key}`}
+                      value={cfg.default_model ?? ""}
+                      onChange={(event) => updateProvider(provider.key, { default_model: event.target.value })}
                     />
+                    <datalist id={`models-${provider.key}`}>
+                      {availableModels.map((model) => (
+                        <option key={model.id} value={model.id}>{model.name}</option>
+                      ))}
+                    </datalist>
                   </label>
-                  <label className="md:col-span-2">
-                    <span className="label">Modelo</span>
-                    <input className="control" value={config.model} onChange={(event) => update(agent.key, { model: event.target.value })} />
-                  </label>
-                  <label className="md:col-span-2">
-                    <span className="label">Fallback separado por virgula</span>
-                    <input
-                      className="control"
-                      value={config.fallback.join(",")}
-                      onChange={(event) =>
-                        update(agent.key, {
-                          fallback: event.target.value
-                            .split(",")
-                            .map((item) => item.trim())
-                            .filter(Boolean) as ProviderKey[],
-                        })
-                      }
-                    />
-                  </label>
+
+                  {modelMessages[provider.key] && (
+                    <p className="text-xs text-[var(--muted)]">{modelMessages[provider.key]}</p>
+                  )}
+
+                  {availableModels.length > 0 && (
+                    <div className="max-h-40 overflow-auto rounded-lg border border-[var(--line)]">
+                      {availableModels.map((model) => (
+                        <button
+                          type="button"
+                          key={model.id}
+                          className="block w-full px-3 py-2 text-left text-xs hover:bg-[var(--soft)]"
+                          onClick={() => updateProvider(provider.key, { default_model: model.id })}
+                        >
+                          <span className="font-medium">{model.id}</span>
+                          {model.name !== model.id && <span className="ml-2 text-[var(--muted)]">{model.name}</span>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </article>
             );
@@ -159,9 +172,9 @@ export default function LlmSettingsPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <button className="btn btn-accent">
+          <button className="btn btn-accent" disabled={busy}>
             <Save size={16} />
-            Salvar matriz LLM
+            {busy ? "Salvando..." : "Salvar provedores"}
           </button>
           {message && <span className="text-sm text-[var(--muted)]">{message}</span>}
         </div>

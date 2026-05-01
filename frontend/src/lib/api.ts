@@ -76,6 +76,51 @@ export type LocalCamera = {
 export type AgentKey = "geral" | "intent" | "visao" | "pesquisa" | "luz" | "memoria";
 export type ProviderKey = "local" | "gemini" | "openai" | "claude";
 
+export type ProviderConfig = {
+  api_key?: string | null;
+  base_url?: string | null;
+  default_model?: string | null;
+};
+
+export type AgentConfig = {
+  provider: ProviderKey;
+  model: string;
+  temperature: number;
+  fallback: ProviderKey[];
+};
+
+export type EmbeddingConfig = {
+  provider: "local" | "google";
+  model: string;
+};
+
+export type LlmConfig = {
+  providers: Record<string, ProviderConfig>;
+  agents: Record<string, AgentConfig>;
+  embedding: EmbeddingConfig;
+};
+
+export type ModelInfo = {
+  id: string;
+  name: string;
+  provider: string;
+  details?: Record<string, unknown>;
+};
+
+export type ModelsResponse = {
+  ok: boolean;
+  provider: string;
+  models: ModelInfo[];
+  message: string;
+};
+
+export type LlmTestResponse = {
+  ok: boolean;
+  provider_used?: string | null;
+  response?: string | null;
+  error?: string | null;
+};
+
 export type Memory = {
   id: string;
   title: string | null;
@@ -223,4 +268,21 @@ export const api = {
       body: JSON.stringify(payload),
     }),
   localCameras: () => request<LocalCamera[]>("/api/v1/vision/local-cameras"),
+  getLlmConfig: () => request<LlmConfig>("/api/v1/llm/config"),
+  setLlmConfig: (payload: LlmConfig) =>
+    request<LlmConfig>("/api/v1/llm/config", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  llmModels: (provider: ProviderKey) => request<ModelsResponse>(`/api/v1/llm/models/${provider}`),
+  testLlm: (payload: {
+    provider: ProviderKey;
+    model: string;
+    message: string;
+    temperature?: number;
+  }) =>
+    request<LlmTestResponse>("/api/v1/llm/test", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
 };
