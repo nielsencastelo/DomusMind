@@ -76,6 +76,9 @@ export default function VisionPage() {
 
   const [streamModal, setStreamModal] = useState<{ source: string; name: string } | null>(null);
   const [selectedRoom, setSelectedRoom] = useState("");
+  const [liveCameraId, setLiveCameraId] = useState("");
+  const [liveEnabled, setLiveEnabled] = useState(true);
+  const [liveError, setLiveError] = useState("");
   const [description, setDescription] = useState("");
   const [analyzeBusy, setAnalyzeBusy] = useState(false);
 
@@ -118,6 +121,12 @@ export default function VisionPage() {
   }, []);
 
   const previewUrl = buildHikvisionUrl(form.ip, form.port, form.username, form.password, form.channel);
+  const liveCamera = cameras.find((cam) => cam.id === liveCameraId) ?? cameras[0];
+  const liveRoom = liveCamera
+    ? rooms.find((room) => room.cameras.some((cam) => cam.id === liveCamera.id))
+    : null;
+  const liveStreamTarget = liveRoom?.name ?? "default";
+  const liveStreamUrl = `${API_URL}/api/v1/vision/stream/${encodeURIComponent(liveStreamTarget)}`;
 
   async function testCamera() {
     setTestBusy(true);
@@ -337,6 +346,77 @@ export default function VisionPage() {
           </form>
         </div>
       )}
+
+      {/* Live camera */}
+      <div className="panel overflow-hidden">
+        <div className="flex flex-col gap-3 border-b border-[var(--line)] px-5 py-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="flex items-center gap-2 font-semibold">
+              <MonitorPlay size={16} />
+              Camera ao vivo
+            </h2>
+            <p className="mt-1 text-xs text-[var(--muted)]">
+              {liveCamera ? liveCamera.name : "Nenhuma camera cadastrada"}
+            </p>
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <select
+              className="control min-w-56"
+              value={liveCamera?.id ?? ""}
+              onChange={(e) => {
+                setLiveCameraId(e.target.value);
+                setLiveEnabled(true);
+                setLiveError("");
+              }}
+              disabled={cameras.length === 0}
+            >
+              {cameras.length === 0 ? (
+                <option value="">Sem cameras</option>
+              ) : (
+                cameras.map((cam) => (
+                  <option key={cam.id} value={cam.id}>
+                    {cam.name}
+                  </option>
+                ))
+              )}
+            </select>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              disabled={!liveCamera}
+              onClick={() => {
+                setLiveEnabled((value) => !value);
+                setLiveError("");
+              }}
+            >
+              {liveEnabled ? <X size={16} /> : <Play size={16} />}
+              {liveEnabled ? "Parar" : "Iniciar"}
+            </button>
+          </div>
+        </div>
+
+        <div className="aspect-video bg-black">
+          {liveCamera && liveEnabled ? (
+            <img
+              key={`${liveCamera.id}-${liveEnabled}`}
+              src={liveStreamUrl}
+              alt={`Stream ao vivo de ${liveCamera.name}`}
+              className="h-full w-full object-contain"
+              onLoad={() => setLiveError("")}
+              onError={() => setLiveError("Nao foi possivel carregar o stream desta camera.")}
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center px-4 text-center text-sm text-white/60">
+              {liveCamera ? "Stream pausado." : "Cadastre uma camera para ver o video ao vivo."}
+            </div>
+          )}
+        </div>
+        {liveError && (
+          <div className="border-t border-red-500/30 bg-red-500/10 px-5 py-3 text-sm text-red-300">
+            {liveError}
+          </div>
+        )}
+      </div>
 
       <div className="grid gap-6 xl:grid-cols-[1fr_22rem]">
         <div className="space-y-5">
