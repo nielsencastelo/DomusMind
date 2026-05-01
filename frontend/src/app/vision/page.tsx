@@ -122,11 +122,9 @@ export default function VisionPage() {
 
   const previewUrl = buildHikvisionUrl(form.ip, form.port, form.username, form.password, form.channel);
   const liveCamera = cameras.find((cam) => cam.id === liveCameraId) ?? cameras[0];
-  const liveRoom = liveCamera
-    ? rooms.find((room) => room.cameras.some((cam) => cam.id === liveCamera.id))
-    : null;
-  const liveStreamTarget = liveRoom?.name ?? "default";
-  const liveStreamUrl = `${API_URL}/api/v1/vision/stream/${encodeURIComponent(liveStreamTarget)}`;
+  const liveStreamUrl = liveCamera
+    ? `${API_URL}/api/v1/vision/stream/camera/${liveCamera.id}`
+    : "";
 
   async function testCamera() {
     setTestBusy(true);
@@ -169,7 +167,7 @@ export default function VisionPage() {
     setSaveBusy(true);
     setSaveMsg("");
     try {
-      await api.createIpCamera({
+      const createdCamera = await api.createIpCamera({
         name: form.name,
         ip: form.ip,
         room_name: form.roomName,
@@ -183,6 +181,9 @@ export default function VisionPage() {
       setForm(emptyForm);
       setFormOpen(false);
       setTestResult(null);
+      setLiveCameraId(createdCamera.id);
+      setLiveEnabled(true);
+      setLiveError("");
       await load();
     } catch (err) {
       setSaveMsg(err instanceof Error ? err.message : "Falha ao salvar.");
@@ -221,7 +222,7 @@ export default function VisionPage() {
     <section className="space-y-6">
       {streamModal && (
         <StreamModal
-          source={`${API_URL}/api/v1/vision/stream/${streamModal.source}`}
+          source={streamModal.source}
           name={streamModal.name}
           onClose={() => setStreamModal(null)}
         />
@@ -462,7 +463,10 @@ export default function VisionPage() {
                         </button>
                         <button
                           className="btn btn-secondary px-3 py-1.5 text-xs"
-                          onClick={() => setStreamModal({ source: room?.name ?? "default", name: cam.name })}
+                          onClick={() => setStreamModal({
+                            source: `${API_URL}/api/v1/vision/stream/camera/${cam.id}`,
+                            name: cam.name,
+                          })}
                         >
                           <MonitorPlay size={13} />
                           {t("vision.stream")}
@@ -552,40 +556,6 @@ export default function VisionPage() {
               </div>
             )}
           </form>
-
-          {/* Live stream preview */}
-          {cameras.length > 0 && (
-            <div className="panel overflow-hidden">
-              <div className="border-b border-[var(--line)] px-4 py-3 text-sm font-semibold flex items-center gap-2">
-                <MonitorPlay size={15} />
-                {t("vision.liveStream")}
-              </div>
-              <select
-                className="control m-3"
-                onChange={(e) => {
-                  if (e.target.value) {
-                    const room = rooms.find((r) => r.cameras.some((c) => c.id === e.target.value));
-                    setSelectedRoom(room?.name ?? "");
-                  }
-                }}
-              >
-                <option value="">Selecione uma camera</option>
-                {cameras.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
-              {selectedRoom && (
-                <div className="aspect-video bg-black">
-                  <img
-                    key={selectedRoom}
-                    src={`${API_URL}/api/v1/vision/stream/${selectedRoom}`}
-                    alt="Live stream"
-                    className="h-full w-full object-contain"
-                  />
-                </div>
-              )}
-            </div>
-          )}
         </aside>
       </div>
     </section>
