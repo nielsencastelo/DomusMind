@@ -281,6 +281,30 @@ async def stream_camera(room: str, db: AsyncSession = Depends(get_db)):
     )
 
 
+@router.get("/stream/camera/{camera_id}")
+async def stream_camera_by_id(camera_id: str, db: AsyncSession = Depends(get_db)):
+    import uuid
+    from sqlalchemy import select
+    from app.models.db_models import Camera
+    from app.services.vision_service import VisionService
+
+    try:
+        parsed_id = uuid.UUID(camera_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail="camera_id invalido.") from exc
+
+    result = await db.execute(select(Camera).where(Camera.id == parsed_id))
+    camera = result.scalar_one_or_none()
+    if not camera:
+        raise HTTPException(status_code=404, detail="Camera nao encontrada.")
+
+    svc = VisionService()
+    return StreamingResponse(
+        svc.mjpeg_frames(camera.source_url),
+        media_type="multipart/x-mixed-replace; boundary=frame",
+    )
+
+
 @router.get("/stream/default")
 async def stream_default_camera(db: AsyncSession = Depends(get_db)):
     from app.services.vision_service import VisionService

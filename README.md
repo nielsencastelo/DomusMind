@@ -268,7 +268,7 @@ REDIS_SESSION_TTL=3600
 ### Home Assistant
 
 ```env
-HASS_URL=http://192.168.2.x:8123
+HASS_URL=http://homeassistant:8123
 HASS_TOKEN=your_long_lived_access_token
 ```
 

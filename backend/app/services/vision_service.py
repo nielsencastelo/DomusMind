@@ -1,4 +1,5 @@
 import base64
+import os
 import time
 from collections import defaultdict
 from pathlib import Path
@@ -62,6 +63,8 @@ class VisionService:
     def _open_cap(source: str | int) -> cv2.VideoCapture:
         if isinstance(source, str) and source.isdigit():
             source = int(source)
+        elif isinstance(source, str) and source.lower().startswith("rtsp://"):
+            os.environ.setdefault("OPENCV_FFMPEG_CAPTURE_OPTIONS", "rtsp_transport;tcp")
         return cv2.VideoCapture(source)
 
     def capture_frame(self, source: str | int) -> np.ndarray | None:
