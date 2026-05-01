@@ -22,7 +22,6 @@
   "dashboard.infrastructure": "Infraestructura",
   "dashboard.backend": "Backend",
   "dashboard.frontend": "Frontend",
-  "dashboard.database": "Base de datos",
   "dashboard.activity": "Actividad reciente",
 
   "chat.placeholder": "Escribe un mensaje...",

@@ -14,10 +14,10 @@ class HAService:
 
     @property
     def _headers(self) -> dict[str, str]:
-        return {
-            "Authorization": f"Bearer {self.token}",
-            "Content-Type": "application/json",
-        }
+        headers = {"Content-Type": "application/json"}
+        if self.token:
+            headers["Authorization"] = f"Bearer {self.token}"
+        return headers
 
     async def ping(self) -> dict[str, Any]:
         if not self.token:
@@ -66,6 +66,8 @@ class HAService:
         if extra:
             payload.update(extra)
         url = f"{self.base_url}/api/services/{domain}/{service}"
+        if not self.token:
+            return False, "Configure HASS_TOKEN para controlar dispositivos no Home Assistant."
         try:
             async with httpx.AsyncClient(timeout=10) as client:
                 r = await client.post(url, headers=self._headers, json=payload)
@@ -87,6 +89,8 @@ class HAService:
 
     async def get_state(self, entity_id: str) -> dict[str, Any] | None:
         url = f"{self.base_url}/api/states/{entity_id}"
+        if not self.token:
+            return None
         try:
             async with httpx.AsyncClient(timeout=10) as client:
                 r = await client.get(url, headers=self._headers)
@@ -98,6 +102,8 @@ class HAService:
 
     async def get_all_states(self) -> list[dict[str, Any]]:
         url = f"{self.base_url}/api/states"
+        if not self.token:
+            return []
         try:
             async with httpx.AsyncClient(timeout=10) as client:
                 r = await client.get(url, headers=self._headers)

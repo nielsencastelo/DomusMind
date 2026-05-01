@@ -438,7 +438,6 @@ export default function DashboardPage() {
               {[
                 { label: "Backend", value: "FastAPI", ok: true },
                 { label: "Cache", value: "Redis", ok: !!health?.services.find(s => s.name === "redis")?.ok },
-                { label: "Banco", value: "SQLite", ok: !!health?.services.find(s => s.name === "db" || s.name === "database")?.ok },
                 { label: "HA", value: "Home Asst.", ok: !!health?.services.find(s => s.name === "home_assistant" || s.name === "ha")?.ok },
               ].map(({ label, value, ok }) => (
                 <div
