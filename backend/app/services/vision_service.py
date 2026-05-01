@@ -11,17 +11,48 @@ from app.core.compute import torch_device
 from app.core.settings import settings
 
 
+async def _get_vision_config() -> dict:
+    """Read vision.* keys from system_config, fall back to settings."""
+    try:
+        from app.core.database import AsyncSessionLocal
+        from app.repositories.config_repo import ConfigRepository
+
+        async with AsyncSessionLocal() as db:
+            repo = ConfigRepository(db)
+            provider = await repo.get("vision.provider")
+            api_key = await repo.get("vision.gemini_api_key")
+            weights = await repo.get("vision.yolo_weights")
+            confidence = await repo.get("vision.yolo_confidence")
+            frames = await repo.get("vision.yolo_frames")
+
+        return {
+            "provider": provider or ("gemini" if settings.gemini_api_key else "yolo"),
+            "gemini_api_key": api_key or settings.gemini_api_key or "",
+            "yolo_weights": weights or settings.yolo_weights,
+            "yolo_confidence": float(confidence) if confidence is not None else 0.6,
+            "yolo_frames": int(frames) if frames is not None else 10,
+        }
+    except Exception:
+        return {
+            "provider": "gemini" if settings.gemini_api_key else "yolo",
+            "gemini_api_key": settings.gemini_api_key or "",
+            "yolo_weights": settings.yolo_weights,
+            "yolo_confidence": 0.6,
+            "yolo_frames": 10,
+        }
+
+
 class VisionService:
     def __init__(self):
-        self.weights_path = Path(settings.yolo_weights)
         self.device = torch_device()
         self._model: YOLO | None = None
 
-    def _get_model(self) -> YOLO:
-        if not self.weights_path.exists():
-            raise FileNotFoundError(f"Peso YOLO não encontrado: {self.weights_path}")
+    def _get_model(self, weights_path: str) -> YOLO:
+        path = Path(weights_path)
+        if not path.exists():
+            raise FileNotFoundError(f"Peso YOLO não encontrado: {path}")
         if self._model is None:
-            self._model = YOLO(str(self.weights_path))
+            self._model = YOLO(str(path))
         return self._model
 
     @staticmethod
@@ -41,21 +72,23 @@ class VisionService:
     def yolo_describe(
         self,
         source: str | int,
+        weights_path: str | None = None,
         frames: int = 10,
         delay: float = 0.2,
         conf: float = 0.6,
     ) -> str:
+        wp = weights_path or settings.yolo_weights
         cap = self._open_cap(source)
         if not cap.isOpened():
             return "Não foi possível acessar a câmera."
 
         try:
-            model = self._get_model()
+            model = self._get_model(wp)
         except FileNotFoundError:
             cap.release()
             return (
                 "Camera acessivel, mas o modelo YOLO nao esta instalado em "
-                f"{self.weights_path}. Configure GEMINI_API_KEY para descricao visual "
+                f"{wp}. Configure GEMINI_API_KEY para descricao visual "
                 "ou adicione o arquivo de pesos no container."
             )
         instances: dict[str, list[int]] = defaultdict(list)
@@ -100,8 +133,7 @@ class VisionService:
         _, buffer = cv2.imencode(".jpg", frame)
         return base64.b64encode(buffer).decode("utf-8")
 
-    async def gemini_describe(self, source: str | int) -> str:
-        """Use Gemini Vision to describe the scene (richer than YOLO)."""
+    async def gemini_describe(self, source: str | int, api_key: str) -> str:
         from langchain_google_genai import ChatGoogleGenerativeAI
         from langchain_core.messages import HumanMessage
 
@@ -110,10 +142,9 @@ class VisionService:
             return "Não foi possível capturar imagem da câmera."
 
         image_b64 = self.frame_to_base64(frame)
-
         model = ChatGoogleGenerativeAI(
             model="gemini-2.0-flash",
-            google_api_key=settings.gemini_api_key,
+            google_api_key=api_key,
         )
         response = await model.ainvoke([
             HumanMessage(content=[
@@ -137,18 +168,38 @@ class VisionService:
     async def describe(
         self,
         source: str | int | None = None,
+        camera_name: str | None = None,
         use_gemini: bool = True,
     ) -> str:
-        """Primary entry point: try Gemini Vision first, fall back to YOLO."""
+        """Primary entry point. Resolves camera by name if provided, then uses DB config."""
+        # Resolve source from camera name if given
+        if camera_name and source is None:
+            try:
+                from app.core.database import AsyncSessionLocal
+                from app.repositories.room_repo import RoomRepository
+
+                async with AsyncSessionLocal() as db:
+                    cam = await RoomRepository(db).get_camera_by_name(camera_name)
+                if cam:
+                    source = cam.source_url
+            except Exception:
+                pass
+
+        cfg = await _get_vision_config()
         src = source if source is not None else settings.default_camera_source
 
-        if use_gemini and settings.gemini_api_key:
+        if use_gemini and cfg["provider"] == "gemini" and cfg["gemini_api_key"]:
             try:
-                return await self.gemini_describe(src)
+                return await self.gemini_describe(src, cfg["gemini_api_key"])
             except Exception:
                 pass  # fall through to YOLO
 
-        return self.yolo_describe(src)
+        return self.yolo_describe(
+            src,
+            weights_path=cfg["yolo_weights"],
+            frames=cfg["yolo_frames"],
+            conf=cfg["yolo_confidence"],
+        )
 
     def mjpeg_frames(self, source: str | int):
         """Generator that yields MJPEG bytes for HTTP streaming."""
