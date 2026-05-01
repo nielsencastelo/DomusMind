@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Database, RefreshCw, Save } from "lucide-react";
 import { api, LlmConfig, ModelInfo } from "@/lib/api";
+import { llmModelDescription } from "@/lib/modelInfo";
 
 function fallbackConfig(): LlmConfig {
   return {
@@ -136,6 +137,9 @@ export default function EmbeddingsSettingsPage() {
               >
                 <div className="font-medium">{model.id}</div>
                 {model.name !== model.id && <div className="text-xs text-[var(--muted)]">{model.name}</div>}
+                <div className="mt-1 text-xs leading-5 text-[var(--muted)]">
+                  {llmModelDescription("local", model.id)}
+                </div>
               </button>
             ))}
           </div>

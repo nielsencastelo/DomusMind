@@ -28,10 +28,18 @@ async def _get_vision_config(session_factory=None) -> dict:
             weights = await repo.get("vision.yolo_weights")
             confidence = await repo.get("vision.yolo_confidence")
             frames = await repo.get("vision.yolo_frames")
+            gemini_model = await repo.get("vision.gemini_model")
+            agent_config = await repo.get("llm.agents")
+
+        if not gemini_model and isinstance(agent_config, dict):
+            vision_agent = agent_config.get("visao")
+            if isinstance(vision_agent, dict) and vision_agent.get("provider") == "gemini":
+                gemini_model = vision_agent.get("model")
 
         return {
             "provider": provider or ("gemini" if settings.gemini_api_key else "yolo"),
             "gemini_api_key": api_key or settings.gemini_api_key or "",
+            "gemini_model": gemini_model or settings.gemini_model,
             "yolo_weights": weights or settings.yolo_weights,
             "yolo_confidence": float(confidence) if confidence is not None else 0.6,
             "yolo_frames": int(frames) if frames is not None else 10,
@@ -40,6 +48,7 @@ async def _get_vision_config(session_factory=None) -> dict:
         return {
             "provider": "gemini" if settings.gemini_api_key else "yolo",
             "gemini_api_key": settings.gemini_api_key or "",
+            "gemini_model": settings.gemini_model,
             "yolo_weights": settings.yolo_weights,
             "yolo_confidence": 0.6,
             "yolo_frames": 10,
@@ -143,7 +152,7 @@ class VisionService:
         _, buffer = cv2.imencode(".jpg", frame)
         return base64.b64encode(buffer).decode("utf-8")
 
-    async def gemini_describe(self, source: str | int, api_key: str) -> str:
+    async def gemini_describe(self, source: str | int, api_key: str, model_name: str | None = None) -> str:
         from langchain_google_genai import ChatGoogleGenerativeAI
         from langchain_core.messages import HumanMessage
 
@@ -153,7 +162,7 @@ class VisionService:
 
         image_b64 = self.frame_to_base64(frame)
         model = ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash",
+            model=model_name or settings.gemini_model,
             google_api_key=api_key,
         )
         response = await model.ainvoke([
@@ -184,7 +193,7 @@ class VisionService:
     ) -> str:
         """Primary entry point. Resolves camera by name if provided, then uses DB config."""
         # Resolve source from camera name if given
-        if camera_name and source is None:
+        if source is None:
             try:
                 if db_session_factory is None:
                     from app.core.database import AsyncSessionLocal
@@ -193,9 +202,15 @@ class VisionService:
                 from app.repositories.room_repo import RoomRepository
 
                 async with db_session_factory() as db:
-                    cam = await RoomRepository(db).get_camera_by_name(camera_name)
-                if cam:
-                    source = cam.source_url
+                    repo = RoomRepository(db)
+                    if camera_name:
+                        cam = await repo.get_camera_by_name(camera_name)
+                        if cam:
+                            source = cam.source_url
+                    else:
+                        default_source = await repo.get_global_default_camera()
+                        if default_source:
+                            source = default_source
             except Exception:
                 pass
 
@@ -204,7 +219,7 @@ class VisionService:
 
         if use_gemini and cfg["provider"] == "gemini" and cfg["gemini_api_key"]:
             try:
-                return await self.gemini_describe(src, cfg["gemini_api_key"])
+                return await self.gemini_describe(src, cfg["gemini_api_key"], cfg["gemini_model"])
             except Exception:
                 pass  # fall through to YOLO
 

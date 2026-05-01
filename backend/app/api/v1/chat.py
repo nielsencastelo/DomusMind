@@ -45,6 +45,55 @@ AGENT_PROMPTS = {
 }
 
 
+async def _agent_options(agent: str) -> dict:
+    try:
+        from app.repositories.config_repo import ConfigRepository
+        from app.core.database import AsyncSessionLocal
+
+        async with AsyncSessionLocal() as db:
+            value = await ConfigRepository(db).get("llm.agents")
+        if not isinstance(value, dict):
+            return {}
+        config = value.get(agent) or value.get("geral") or {}
+        return config if isinstance(config, dict) else {}
+    except Exception:
+        return {}
+
+
+async def _provider_configs() -> dict:
+    try:
+        from app.repositories.config_repo import ConfigRepository
+        from app.core.database import AsyncSessionLocal
+
+        async with AsyncSessionLocal() as db:
+            value = await ConfigRepository(db).get("llm.providers")
+        return value if isinstance(value, dict) else {}
+    except Exception:
+        return {}
+
+
+def _provider_chain(primary: str | None, fallback: object) -> list[str] | None:
+    providers: list[str] = []
+    if primary:
+        providers.append(primary)
+    if isinstance(fallback, list):
+        providers.extend(str(item).strip().lower() for item in fallback if str(item).strip())
+    return providers or None
+
+
+def _default_model(provider: str, provider_configs: dict) -> str | None:
+    config = provider_configs.get(provider)
+    if isinstance(config, dict) and config.get("default_model"):
+        return str(config["default_model"])
+    defaults = {
+        "local": settings.local_model,
+        "gemini": settings.gemini_model,
+        "openai": settings.openai_model,
+        "claude": settings.claude_model,
+    }
+    return defaults.get(provider)
+
+
 class AudioConfigOut(BaseModel):
     audio_sample_rate: int
     whisper_model: str
@@ -134,19 +183,49 @@ async def chat(payload: ChatRequest):
 @router.post("/test-agent", response_model=AgentTestResponse)
 async def test_agent(payload: AgentTestRequest):
     router_ = LLMRouter()
-    providers = [payload.provider] if payload.provider else None
+    options = await _agent_options(payload.agent)
+    provider_configs = await _provider_configs()
+    configured_provider = str(options.get("provider") or "").strip().lower() or None
+    provider = payload.provider or configured_provider
+    providers = [payload.provider] if payload.provider else _provider_chain(provider, options.get("fallback"))
+    model = payload.model or str(options.get("model") or "").strip() or None
+    temperature = payload.temperature if payload.temperature is not None else float(options.get("temperature", 0.2))
     system = AGENT_PROMPTS[payload.agent]
     message = payload.message
+    vision_context: str | None = None
+
     if payload.agent == "memoria":
         message = f"Teste de memoria/RAG sem gravar conversa:\n{payload.message}"
+    elif payload.agent == "visao":
+        try:
+            from app.services.vision_service import VisionService, _get_vision_config
+
+            vision_cfg = await _get_vision_config()
+            raw_context = await VisionService().describe()
+            visual_model = (
+                vision_cfg.get("gemini_model")
+                if vision_cfg.get("provider") == "gemini"
+                else vision_cfg.get("yolo_weights")
+            )
+            vision_context = (
+                f"Provider visual: {vision_cfg.get('provider')} | modelo/pesos: {visual_model}\n"
+                f"Resultado: {raw_context}"
+            )
+        except Exception as exc:
+            vision_context = f"Erro ao acessar camera: {exc}"
+        message = (
+            f"Comando: {payload.message}\n\n"
+            "Contexto real retornado pelo modulo de visao:\n"
+            f"{vision_context}"
+        )
 
     try:
         messages = router_.build_messages(message, system_prompt=system)
         response, provider = await router_.ainvoke(
             messages,
             providers=providers,
-            temperature=payload.temperature,
-            model_override=payload.model,
+            temperature=temperature,
+            model_override=model,
         )
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
@@ -155,6 +234,8 @@ async def test_agent(payload: AgentTestRequest):
         agent=payload.agent,
         provider_used=provider,
         response=response,
+        model_used=model or _default_model(provider, provider_configs),
+        vision_context=vision_context,
     )
 
 

@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { MessageSquareText, RefreshCw, Send } from "lucide-react";
 import { api, LlmConfig, ModelInfo, ProviderKey } from "@/lib/api";
+import { llmModelDescription } from "@/lib/modelInfo";
 
 const providers: ProviderKey[] = ["local", "gemini", "openai", "claude"];
 
@@ -141,6 +142,9 @@ export default function LlmTestPage() {
             >
               <div className="font-medium">{item.id}</div>
               {item.name !== item.id && <div className="text-[var(--muted)]">{item.name}</div>}
+              <div className="mt-1 leading-5 text-[var(--muted)]">
+                {llmModelDescription(provider, item.id)}
+              </div>
             </button>
           ))}
           {models.length === 0 && <p className="text-sm text-[var(--muted)]">Clique em Listar modelos.</p>}

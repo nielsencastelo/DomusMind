@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { Bot, Download, Eye, Key, RefreshCw, Save, Sliders } from "lucide-react";
 import { api, VisionConfig, YoloModelInfo } from "@/lib/api";
 import { useI18n } from "@/hooks/useI18n";
+import { yoloModelDescription } from "@/lib/modelInfo";
 
 export default function VisionSettingsPage() {
   const [config, setConfig] = useState<VisionConfig | null>(null);
@@ -201,6 +202,9 @@ export default function VisionSettingsPage() {
                       onClick={() => model.installed && setWeights(model.path)}
                     >
                       <div className="truncate text-sm font-medium">{model.name}</div>
+                      <div className="mt-1 text-xs leading-5 text-[var(--muted)]">
+                        {yoloModelDescription(model.name)}
+                      </div>
                       <div className="text-xs text-[var(--muted)]">
                         {model.installed
                           ? `Instalado em ${model.path}${model.size_bytes ? ` (${(model.size_bytes / 1024 / 1024).toFixed(1)} MB)` : ""}`

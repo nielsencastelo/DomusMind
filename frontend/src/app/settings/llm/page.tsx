@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Bot, RefreshCw, Save, Server, Sparkles } from "lucide-react";
 import { api, LlmConfig, ModelInfo, ProviderKey } from "@/lib/api";
+import { llmModelDescription } from "@/lib/modelInfo";
 
 const providers: Array<{ key: ProviderKey; label: string; hint: string }> = [
   { key: "gemini", label: "Gemini", hint: "Google AI Studio / Gemini API" },
@@ -161,6 +162,9 @@ export default function LlmProvidersPage() {
                         >
                           <span className="font-medium">{model.id}</span>
                           {model.name !== model.id && <span className="ml-2 text-[var(--muted)]">{model.name}</span>}
+                          <span className="mt-1 block leading-5 text-[var(--muted)]">
+                            {llmModelDescription(provider.key, model.id)}
+                          </span>
                         </button>
                       ))}
                     </div>

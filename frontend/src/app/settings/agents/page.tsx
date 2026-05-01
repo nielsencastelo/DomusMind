@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { BrainCircuit, RefreshCw, Save, SlidersHorizontal } from "lucide-react";
 import { AgentConfig, AgentKey, api, LlmConfig, ModelInfo, ProviderKey } from "@/lib/api";
+import { llmModelDescription } from "@/lib/modelInfo";
 
 const agents: Array<{ key: AgentKey; label: string; hint: string }> = [
   { key: "geral", label: "Agente geral", hint: "Resposta final e conversa principal." },
@@ -147,6 +148,24 @@ export default function AgentsSettingsPage() {
                         <option key={model.id} value={model.id}>{model.name}</option>
                       ))}
                     </datalist>
+                    {providerModels.length > 0 && (
+                      <div className="mt-2 max-h-40 overflow-auto rounded-lg border border-[var(--line)]">
+                        {providerModels.map((model) => (
+                          <button
+                            key={model.id}
+                            type="button"
+                            className="block w-full px-3 py-2 text-left text-xs hover:bg-[var(--soft)]"
+                            onClick={() => updateAgent(agent.key, { model: model.id })}
+                          >
+                            <div className="font-medium">{model.id}</div>
+                            {model.name !== model.id && <div className="text-[var(--muted)]">{model.name}</div>}
+                            <div className="mt-1 leading-5 text-[var(--muted)]">
+                              {llmModelDescription(cfg.provider, model.id)}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </label>
                   <label className="md:col-span-2">
                     <span className="label">Fallback separado por virgula</span>
