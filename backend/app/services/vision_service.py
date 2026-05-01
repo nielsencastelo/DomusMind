@@ -11,13 +11,16 @@ from app.core.compute import torch_device
 from app.core.settings import settings
 
 
-async def _get_vision_config() -> dict:
+async def _get_vision_config(session_factory=None) -> dict:
     """Read vision.* keys from system_config, fall back to settings."""
     try:
-        from app.core.database import AsyncSessionLocal
+        if session_factory is None:
+            from app.core.database import AsyncSessionLocal
+
+            session_factory = AsyncSessionLocal
         from app.repositories.config_repo import ConfigRepository
 
-        async with AsyncSessionLocal() as db:
+        async with session_factory() as db:
             repo = ConfigRepository(db)
             provider = await repo.get("vision.provider")
             api_key = await repo.get("vision.gemini_api_key")
@@ -170,22 +173,26 @@ class VisionService:
         source: str | int | None = None,
         camera_name: str | None = None,
         use_gemini: bool = True,
+        db_session_factory=None,
     ) -> str:
         """Primary entry point. Resolves camera by name if provided, then uses DB config."""
         # Resolve source from camera name if given
         if camera_name and source is None:
             try:
-                from app.core.database import AsyncSessionLocal
+                if db_session_factory is None:
+                    from app.core.database import AsyncSessionLocal
+
+                    db_session_factory = AsyncSessionLocal
                 from app.repositories.room_repo import RoomRepository
 
-                async with AsyncSessionLocal() as db:
+                async with db_session_factory() as db:
                     cam = await RoomRepository(db).get_camera_by_name(camera_name)
                 if cam:
                     source = cam.source_url
             except Exception:
                 pass
 
-        cfg = await _get_vision_config()
+        cfg = await _get_vision_config(db_session_factory)
         src = source if source is not None else settings.default_camera_source
 
         if use_gemini and cfg["provider"] == "gemini" and cfg["gemini_api_key"]:

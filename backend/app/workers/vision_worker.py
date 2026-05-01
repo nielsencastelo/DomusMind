@@ -1,6 +1,7 @@
 import asyncio
 
 from app.celery import celery_app
+from app.core.database import WorkerSessionLocal
 from app.core.settings import settings
 from app.services.vision_service import VisionService
 
@@ -14,7 +15,6 @@ async def _monitor_default_camera() -> dict[str, str]:
     vision = VisionService()
     source = settings.default_camera_source
     try:
-        from app.core.database import WorkerSessionLocal
         from app.repositories.room_repo import RoomRepository
 
         async with WorkerSessionLocal() as db:
@@ -24,7 +24,11 @@ async def _monitor_default_camera() -> dict[str, str]:
     except Exception:
         pass
 
-    description = await vision.describe(source, use_gemini=False)
+    description = await vision.describe(
+        source,
+        use_gemini=False,
+        db_session_factory=WorkerSessionLocal,
+    )
     lowered = description.lower()
     if "yolo nao esta instalado" in lowered:
         status = "vision_unconfigured"
