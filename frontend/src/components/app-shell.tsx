@@ -36,9 +36,12 @@ const LOCALES = [
   { code: "es" as const, label: "ES" },
 ];
 
+const FRONTEND_VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? "2.0.0";
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [compute, setCompute] = useState<ServiceStatus | null>(null);
+  const [backendVersion, setBackendVersion] = useState<string | null>(null);
   const { t, locale } = useI18n();
   const setLocale = useDomusStore((s) => s.setLocale);
 
@@ -59,7 +62,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       }
     }
 
+    async function loadVersion() {
+      try {
+        const v = await api.version();
+        if (mounted) setBackendVersion(v.version);
+      } catch {
+        // version endpoint optional
+      }
+    }
+
     loadCompute();
+    loadVersion();
     const timer = window.setInterval(loadCompute, 30_000);
     return () => { mounted = false; window.clearInterval(timer); };
   }, []);
