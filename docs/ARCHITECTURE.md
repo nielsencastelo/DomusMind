@@ -37,7 +37,7 @@ A palavra de ativação é **"Coca"** (variações: koka, coka, kouka).
 | Busca | DuckDuckGo Search API |
 | Automação Residencial | Home Assistant (REST API) |
 | Configuração | python-dotenv + Pydantic |
-| Persistência | JSON em arquivo (`rooms.json`) |
+| Persistência | PostgreSQL + pgvector |
 
 ---
 
@@ -54,11 +54,11 @@ DomusMind/
 │   │   ├── app.py                # Fábrica da aplicação FastAPI
 │   │   └── routes/
 │   │       ├── chat.py           # POST /chat, /chat/speech, /chat/transcribe
-│   │       ├── config.py         # GET/POST /config/rooms
+│   │       ├── config.py         # system_config no PostgreSQL
 │   │       ├── devices.py        # POST /devices/light, /devices/vision
 │   │       └── health.py         # GET /health
 │   ├── configs/
-│   │   └── rooms.json            # Configuração de cômodos e dispositivos
+│   │   └── database.py            # Engine PostgreSQL async
 │   ├── core/
 │   │   └── settings.py           # Variáveis de ambiente via Pydantic
 │   ├── ha/
@@ -68,7 +68,7 @@ DomusMind/
 │   ├── prompts/
 │   │   └── system_prompts.py     # System prompts por intenção
 │   ├── repositories/
-│   │   └── config_repository.py  # Leitura/escrita do rooms.json
+│   │   └── room_repo.py          # Cômodos, dispositivos e câmeras no PostgreSQL
 │   └── services/
 │       ├── orchestrator.py       # Orquestrador principal de requisições
 │       ├── router_llm.py         # Roteador multi-provedor LLM com fallback
@@ -206,8 +206,8 @@ Base URL: `http://localhost:8000/api/v1`
 | `POST` | `/chat` | Processa mensagem de texto do usuário |
 | `POST` | `/chat/speech` | Converte texto em fala (TTS) |
 | `POST` | `/chat/transcribe` | Captura microfone e transcreve |
-| `GET` | `/config/rooms` | Retorna configuração dos cômodos |
-| `POST` | `/config/rooms` | Atualiza configuração dos cômodos |
+| `GET` | `/devices/rooms` | Lista cômodos, dispositivos e câmeras do PostgreSQL |
+| `POST` | `/devices/rooms` | Cria/atualiza cômodo, dispositivos e câmeras no PostgreSQL |
 | `POST` | `/devices/light` | Liga/desliga luz em cômodo |
 | `POST` | `/devices/vision` | Captura câmera e descreve cena |
 | `GET` | `/health` | Status do sistema e conectividade HA |
@@ -221,30 +221,17 @@ Acessível em `http://localhost:8501` com 4 abas:
 | Aba | Função |
 |-----|--------|
 | **Assistente** | Chat por texto, botão de fala, histórico de conversa |
-| **Configuração** | Editor JSON do rooms.json |
+| **Configuração** | Formulários gravando em PostgreSQL |
 | **Dispositivos** | Teste manual de luzes e câmeras |
 | **Saúde** | Status dos serviços e conectividade HA |
 
 ---
 
-## Configuração de Cômodos (`rooms.json`)
+## Configuração de Cômodos
 
-```json
-{
-  "sala": {
-    "friendly_name": "Sala",
-    "light_entity_id": "light.sala_principal",
-    "light_domain": "light",
-    "camera_source": "0"
-  },
-  "quarto": {
-    "friendly_name": "Quarto",
-    "light_entity_id": "switch.quarto_luz",
-    "light_domain": "switch",
-    "camera_source": "rtsp://user:pass@192.168.2.218:554/stream"
-  }
-}
-```
+Cômodos, dispositivos e câmeras são persistidos nas tabelas PostgreSQL `rooms`,
+`devices` e `cameras`. A interface de Ajustes grava diretamente no banco, sem
+editor de arquivo JSON.
 
 ---
 
@@ -300,7 +287,7 @@ services:
 
 | Item | Limitação |
 |------|-----------|
-| Persistência | Rooms salvas em JSON; sem banco de dados |
+| Persistência | PostgreSQL obrigatório para rooms, câmeras, memória e configurações |
 | Memória | Histórico de conversa apenas na sessão ativa (em memória) |
 | Agentes | Executam de forma sequencial no mesmo processo |
 | Frontend | Streamlit: limitado para UX rica e mobile |

@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { Home, Plus, RefreshCw, Save } from "lucide-react";
+import { Camera, Home, Lightbulb, Plus, RefreshCw } from "lucide-react";
 import { api, Room } from "@/lib/api";
 
 export default function RoomsSettingsPage() {
@@ -10,16 +10,10 @@ export default function RoomsSettingsPage() {
   const [friendlyName, setFriendlyName] = useState("");
   const [lightEntity, setLightEntity] = useState("");
   const [cameraUrl, setCameraUrl] = useState("");
-  const [roomsJson, setRoomsJson] = useState("{}");
   const [message, setMessage] = useState("");
 
   async function load() {
-    const [nextRooms, config] = await Promise.all([
-      api.rooms(),
-      api.roomsConfig().catch(() => ({ rooms: {} })),
-    ]);
-    setRooms(nextRooms);
-    setRoomsJson(JSON.stringify(config.rooms, null, 2));
+    setRooms(await api.rooms());
   }
 
   useEffect(() => {
@@ -54,45 +48,29 @@ export default function RoomsSettingsPage() {
       setFriendlyName("");
       setLightEntity("");
       setCameraUrl("");
-      setMessage("Comodo salvo.");
+      setMessage("Comodo salvo no PostgreSQL.");
       await load();
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Falha ao salvar comodo.");
     }
   }
 
-  async function saveJsonConfig(event: FormEvent) {
-    event.preventDefault();
-    setMessage("");
-    try {
-      const parsed = JSON.parse(roomsJson) as Record<string, unknown>;
-      const result = await api.updateRoomsConfig(parsed);
-      setMessage(result.message);
-      await load();
-    } catch (err) {
-      setMessage(err instanceof Error ? err.message : "JSON invalido.");
-    }
-  }
-
   return (
     <section className="grid gap-5 lg:grid-cols-[1fr_24rem]">
       <div>
-        <h1 className="page-title">Comodos</h1>
-        <p className="mt-2 text-sm text-[var(--muted)]">Cadastro de comodos, luzes e cameras no banco.</p>
-        <form onSubmit={saveJsonConfig} className="panel mt-5 space-y-3 p-4">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="font-semibold">Editor JSON</h2>
-            <button type="button" className="btn btn-secondary" onClick={load}>
-              <RefreshCw size={16} />
-              Recarregar
-            </button>
+        <div className="flex items-end justify-between gap-3">
+          <div>
+            <h1 className="page-title">Comodos e dispositivos</h1>
+            <p className="mt-2 text-sm text-[var(--muted)]">
+              Cadastro direto no PostgreSQL. Sem arquivos JSON de configuracao.
+            </p>
           </div>
-          <textarea className="control min-h-80 font-mono text-sm" value={roomsJson} onChange={(event) => setRoomsJson(event.target.value)} />
-          <button className="btn w-fit">
-            <Save size={16} />
-            Salvar JSON
+          <button className="btn btn-secondary w-fit" onClick={load}>
+            <RefreshCw size={16} />
+            Recarregar
           </button>
-        </form>
+        </div>
+
         <div className="mt-5 grid gap-3 md:grid-cols-2">
           {rooms.map((room) => (
             <article key={room.id} className="panel p-4">
@@ -100,11 +78,32 @@ export default function RoomsSettingsPage() {
                 <Home size={17} />
                 {room.friendly_name || room.name}
               </div>
-              <div className="mt-3 text-sm text-[var(--muted)]">
-                {room.devices.length} dispositivos, {room.cameras.length} cameras
+              <div className="mt-3 space-y-2 text-sm text-[var(--muted)]">
+                <div className="flex items-center gap-2">
+                  <Lightbulb size={14} />
+                  {room.devices.length} dispositivo(s)
+                </div>
+                <div className="flex items-center gap-2">
+                  <Camera size={14} />
+                  {room.cameras.length} camera(s)
+                </div>
               </div>
+              {room.cameras.length > 0 && (
+                <div className="mt-3 space-y-1 border-t border-[var(--line)] pt-3">
+                  {room.cameras.map((camera) => (
+                    <div key={camera.id} className="truncate text-xs text-[var(--muted)]">
+                      {camera.name}: {camera.source_url}
+                    </div>
+                  ))}
+                </div>
+              )}
             </article>
           ))}
+          {rooms.length === 0 && (
+            <div className="panel p-5 text-sm text-[var(--muted)]">
+              Nenhum comodo cadastrado ainda.
+            </div>
+          )}
         </div>
       </div>
 
@@ -125,11 +124,11 @@ export default function RoomsSettingsPage() {
           </label>
           <label>
             <span className="label">URL da camera</span>
-            <input className="control" value={cameraUrl} onChange={(event) => setCameraUrl(event.target.value)} placeholder="rtsp://..." />
+            <input className="control" value={cameraUrl} onChange={(event) => setCameraUrl(event.target.value)} placeholder="rtsp://usuario:senha@ip:554/Streaming/channels/101/" />
           </label>
           <button className="btn w-full" disabled={!name.trim()}>
             <Plus size={16} />
-            Salvar
+            Salvar no banco
           </button>
           {message && <p className="text-sm text-[var(--muted)]">{message}</p>}
         </form>

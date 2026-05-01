@@ -227,12 +227,6 @@ export const api = {
       body: JSON.stringify(payload),
     }),
   cachedHaStates: () => request<HaState[]>("/api/v1/devices/ha/cache"),
-  roomsConfig: () => request<{ rooms: Record<string, unknown> }>("/api/v1/config/rooms"),
-  updateRoomsConfig: (rooms: Record<string, unknown>) =>
-    request<{ ok: boolean; message: string }>("/api/v1/config/rooms", {
-      method: "POST",
-      body: JSON.stringify({ rooms }),
-    }),
   memories: () => request<Memory[]>("/api/v1/memory/memories"),
   documents: () => request<Array<{ id: string; filename: string; content: string }>>("/api/v1/memory/documents"),
   createDocument: (filename: string, content: string) =>

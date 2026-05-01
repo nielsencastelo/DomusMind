@@ -420,8 +420,9 @@ Important endpoints:
 - `GET /api/v1/config/{key}`
 - `PUT /api/v1/config/{key}`
 - `DELETE /api/v1/config/{key}`
-- `GET /api/v1/config/rooms`
-- `POST /api/v1/config/rooms`
+- `GET /api/v1/devices/rooms`
+- `POST /api/v1/devices/rooms`
+- `POST /api/v1/devices/cameras/ip`
 
 ## Background Workers
 

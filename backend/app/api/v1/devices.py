@@ -134,7 +134,14 @@ async def delete_room(room_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
 def _hikvision_rtsp_url(payload: IPCameraIn) -> str:
     user = quote(payload.username or "", safe="")
     password = quote(payload.password or "", safe="")
-    auth = f"{user}:{password}@" if user or password else ""
+    if user and password:
+        auth = f"{user}:{password}@"
+    elif user:
+        auth = f"{user}@"
+    elif password:
+        auth = f":{password}@"
+    else:
+        auth = ""
     channel = payload.channel.strip() or "101"
     return f"rtsp://{auth}{payload.ip}:{payload.port}/Streaming/channels/{channel}/"
 

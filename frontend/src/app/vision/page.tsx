@@ -22,7 +22,7 @@ import { useI18n } from "@/hooks/useI18n";
 function buildHikvisionUrl(ip: string, port: number, username: string, password: string, channel: string) {
   const user = encodeURIComponent(username.trim());
   const pass = encodeURIComponent(password.trim());
-  const auth = user || pass ? `${user}:${pass}@` : "";
+  const auth = user && pass ? `${user}:${pass}@` : user ? `${user}@` : pass ? `:${pass}@` : "";
   return `rtsp://${auth}${ip.trim()}:${port}/Streaming/channels/${channel || "101"}/`;
 }
 
@@ -43,7 +43,7 @@ const emptyForm: IpForm = {
   ip: "192.168.2.218",
   port: 554,
   username: "admin",
-  password: "globalsys123",
+  password: "",
   channel: "101",
   isDefault: true,
 };
