@@ -39,8 +39,8 @@ export default function MemoryPage() {
       <div className="space-y-5">
         <div className="flex justify-between gap-4">
           <div>
-            <h1 className="page-title">Memoria</h1>
-            <p className="mt-2 text-sm text-[var(--muted)]">Memorias consolidadas e documentos indexados para RAG.</p>
+            <h1 className="page-title">{t("memory.title")}</h1>
+            <p className="mt-2 text-sm text-[var(--muted)]">{t("memory.subtitle")}</p>
           </div>
           <button className="btn btn-secondary h-fit" onClick={load}>
             <RefreshCw size={16} />
@@ -56,24 +56,24 @@ export default function MemoryPage() {
               <p className="text-sm leading-6 text-[var(--muted)]">{memory.content}</p>
             </article>
           ))}
-          {memories.length === 0 && <div className="panel p-6 text-sm text-[var(--muted)]">Nenhuma memoria consolidada ainda.</div>}
+          {memories.length === 0 && <div className="panel p-6 text-sm text-[var(--muted)]">{t("memory.noMemories")}</div>}
         </div>
       </div>
 
       <aside className="panel h-fit p-4">
-        <h2 className="mb-4 font-semibold">Adicionar documento</h2>
+        <h2 className="mb-4 font-semibold">{t("memory.upload")}</h2>
         <form onSubmit={submit} className="space-y-3">
           <label>
-            <span className="label">Arquivo</span>
+            <span className="label">{t("memory.filename")}</span>
             <input className="control" value={filename} onChange={(event) => setFilename(event.target.value)} placeholder="manual-ar.txt" />
           </label>
           <label>
-            <span className="label">Conteudo</span>
+            <span className="label">{t("memory.content")}</span>
             <textarea className="control min-h-44" value={content} onChange={(event) => setContent(event.target.value)} />
           </label>
           <button className="btn w-full" disabled={!content.trim()}>
             <FilePlus size={16} />
-            Indexar
+            {t("memory.save")}
           </button>
           {message && <p className="text-sm text-[var(--muted)]">{message}</p>}
         </form>

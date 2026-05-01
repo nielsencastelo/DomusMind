@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { Save } from "lucide-react";
 import { api } from "@/lib/api";
+import { useI18n } from "@/hooks/useI18n";
 
 type ConfigEntry = {
   key: string;
@@ -17,6 +18,7 @@ export default function SettingsPage() {
   const [value, setValue] = useState('"DomusMind"');
   const [description, setDescription] = useState("");
   const [message, setMessage] = useState("");
+  const { t } = useI18n();
 
   async function load() {
     setEntries(await api.config());
@@ -47,17 +49,17 @@ export default function SettingsPage() {
   return (
     <section className="grid gap-5 lg:grid-cols-[1fr_24rem]">
       <div>
-        <h1 className="page-title">Configuracoes</h1>
-        <p className="mt-2 text-sm text-[var(--muted)]">Chaves em banco para ajustes do assistente sem editar arquivos.</p>
+        <h1 className="page-title">{t("settings.title")}</h1>
+        <p className="mt-2 text-sm text-[var(--muted)]">{t("settings.subtitle")}</p>
         <div className="mt-4 flex flex-wrap gap-2">
           <Link className="btn btn-secondary" href="/settings/rooms">
-            Comodos
+            {t("settings.rooms")}
           </Link>
           <Link className="btn btn-secondary" href="/settings/llm">
-            LLM
+            {t("settings.llm")}
           </Link>
           <Link className="btn btn-secondary" href="/settings/vision">
-            Visao
+            {t("settings.vision")}
           </Link>
         </div>
         <div className="mt-5 divide-y divide-[var(--line)] border border-[var(--line)] bg-[var(--panel)]">
@@ -75,7 +77,7 @@ export default function SettingsPage() {
               <div className="mt-1 truncate text-sm text-[var(--muted)]">{JSON.stringify(entry.value)}</div>
             </button>
           ))}
-          {entries.length === 0 && <div className="p-5 text-sm text-[var(--muted)]">Nenhuma configuracao salva ainda.</div>}
+          {entries.length === 0 && <div className="p-5 text-sm text-[var(--muted)]">{t("settings.empty")}</div>}
         </div>
       </div>
 
