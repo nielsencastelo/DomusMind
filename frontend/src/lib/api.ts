@@ -110,8 +110,14 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+export type AppVersion = {
+  version: string;
+  name: string;
+};
+
 export const api = {
   health: () => request<HealthResponse>("/api/v1/health"),
+  version: () => request<AppVersion>("/api/v1/health/version"),
   rooms: () => request<Room[]>("/api/v1/devices/rooms"),
   cameras: () => request<Camera[]>("/api/v1/devices/cameras"),
   createRoom: (payload: {

@@ -1,9 +1,21 @@
 from fastapi import APIRouter
+from pydantic import BaseModel
 
+from app.core.version import APP_VERSION
 from app.models.schemas import HealthResponse, ServiceStatus
 from app.services.ha_service import HAService
 
 router = APIRouter(prefix="/health", tags=["health"])
+
+
+class VersionResponse(BaseModel):
+    version: str
+    name: str = "DomusMind"
+
+
+@router.get("/version", response_model=VersionResponse, tags=["version"])
+async def get_version():
+    return VersionResponse(version=APP_VERSION)
 
 
 @router.get("", response_model=HealthResponse)

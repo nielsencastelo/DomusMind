@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.router import api_router
 from app.core.redis import close_redis, get_redis
 from app.core.settings import settings
+from app.core.version import APP_VERSION
 
 
 @asynccontextmanager
@@ -20,7 +21,7 @@ async def lifespan(app: FastAPI):
 def create_app() -> FastAPI:
     app = FastAPI(
         title="DomusMind API",
-        version="2.0.0",
+        version=APP_VERSION,
         description="Backend do assistente doméstico inteligente DomusMind",
         lifespan=lifespan,
     )
