@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { FilePlus, RefreshCw } from "lucide-react";
 import { api, Memory } from "@/lib/api";
+import { useI18n } from "@/hooks/useI18n";
 
 export default function MemoryPage() {
   const [memories, setMemories] = useState<Memory[]>([]);
