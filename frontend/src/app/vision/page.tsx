@@ -23,7 +23,7 @@ function buildHikvisionUrl(ip: string, port: number, username: string, password:
   const user = encodeURIComponent(username.trim());
   const pass = encodeURIComponent(password.trim());
   const auth = user || pass ? `${user}:${pass}@` : "";
-  return `rtsp://${auth}${ip.trim()}:${port}/Streaming/Channels/${channel || "101"}`;
+  return `rtsp://${auth}${ip.trim()}:${port}/Streaming/channels/${channel || "101"}/`;
 }
 
 type IpForm = {
@@ -42,8 +42,8 @@ const emptyForm: IpForm = {
   roomName: "",
   ip: "192.168.2.218",
   port: 554,
-  username: "",
-  password: "",
+  username: "admin",
+  password: "globalsys123",
   channel: "101",
   isDefault: true,
 };

@@ -136,7 +136,7 @@ def _hikvision_rtsp_url(payload: IPCameraIn) -> str:
     password = quote(payload.password or "", safe="")
     auth = f"{user}:{password}@" if user or password else ""
     channel = payload.channel.strip() or "101"
-    return f"rtsp://{auth}{payload.ip}:{payload.port}/Streaming/Channels/{channel}"
+    return f"rtsp://{auth}{payload.ip}:{payload.port}/Streaming/channels/{channel}/"
 
 
 @router.post("/cameras/ip", response_model=CameraOut, status_code=201)
