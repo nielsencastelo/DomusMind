@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { Bot, FlaskConical, Send } from "lucide-react";
 import { AgentKey, ProviderKey, api } from "@/lib/api";
+import { useI18n } from "@/hooks/useI18n";
 
 const agents: Array<{ key: AgentKey; label: string; prompt: string }> = [
   { key: "geral", label: "Geral", prompt: "Explique o status ideal da casa em uma frase." },
@@ -22,6 +23,7 @@ export default function LabPage() {
   const [response, setResponse] = useState("");
   const [providerUsed, setProviderUsed] = useState("");
   const [busy, setBusy] = useState(false);
+  const { t } = useI18n();
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -52,7 +54,7 @@ export default function LabPage() {
           <FlaskConical size={14} />
           Ambiente de testes
         </div>
-        <h1 className="text-2xl font-semibold">Laboratorio</h1>
+        <h1 className="text-2xl font-semibold">{t("lab.title")}</h1>
         <p className="mt-2 text-sm text-[var(--muted)]">Teste cada agente sem depender do fluxo completo do chat.</p>
 
         <div className="mt-5 grid gap-2">

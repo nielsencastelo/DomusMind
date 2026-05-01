@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Bot, Eye, Key, Save, Sliders } from "lucide-react";
 import { api, VisionConfig } from "@/lib/api";
+import { useI18n } from "@/hooks/useI18n";
 
 export default function VisionSettingsPage() {
   const [config, setConfig] = useState<VisionConfig | null>(null);
@@ -14,6 +15,7 @@ export default function VisionSettingsPage() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
+  const { t } = useI18n();
 
   useEffect(() => {
     api
@@ -55,10 +57,10 @@ export default function VisionSettingsPage() {
   return (
     <section className="max-w-2xl space-y-6">
       <div>
-        <div className="chip mb-3">Modelo de visao computacional</div>
-        <h1 className="page-title">Configuracoes de Visao</h1>
+        <div className="chip mb-3">{t("settings.vision.chip")}</div>
+        <h1 className="page-title">{t("settings.vision.title")}</h1>
         <p className="mt-2 text-sm text-[var(--muted)]">
-          Escolha o provedor de visao e configure as credenciais. As configuracoes sao salvas no banco e aplicadas em tempo real.
+          {t("settings.vision.subtitle")}
         </p>
       </div>
 
@@ -67,7 +69,7 @@ export default function VisionSettingsPage() {
         <div className="panel p-5 space-y-4">
           <h2 className="flex items-center gap-2 font-semibold">
             <Bot size={17} />
-            Provedor de visao
+            {t("settings.vision.provider")}
           </h2>
           <div className="grid grid-cols-2 gap-3">
             <button
@@ -79,8 +81,8 @@ export default function VisionSettingsPage() {
                   : "border-[var(--line)] hover:border-[var(--accent)]/50"
               }`}
             >
-              <div className="font-semibold">Gemini Vision</div>
-              <div className="mt-1 text-xs text-[var(--muted)]">Google AI — descricao rica em linguagem natural</div>
+              <div className="font-semibold">{t("settings.vision.gemini")}</div>
+              <div className="mt-1 text-xs text-[var(--muted)]">{t("settings.vision.geminiDesc")}</div>
             </button>
             <button
               type="button"
@@ -91,8 +93,8 @@ export default function VisionSettingsPage() {
                   : "border-[var(--line)] hover:border-[var(--accent)]/50"
               }`}
             >
-              <div className="font-semibold">YOLO Local</div>
-              <div className="mt-1 text-xs text-[var(--muted)]">Deteccao local offline — sem dependencia de API</div>
+              <div className="font-semibold">{t("settings.vision.yolo")}</div>
+              <div className="mt-1 text-xs text-[var(--muted)]">{t("settings.vision.yoloDesc")}</div>
             </button>
           </div>
 
@@ -179,7 +181,7 @@ export default function VisionSettingsPage() {
 
         <button className="btn w-full" disabled={busy}>
           <Save size={16} />
-          {busy ? "Salvando..." : "Salvar configuracoes"}
+          {busy ? t("settings.vision.saving") : t("settings.vision.saveBtn")}
         </button>
 
         {message && (

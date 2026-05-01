@@ -82,7 +82,7 @@ export default function SettingsPage() {
       </div>
 
       <aside className="panel h-fit p-4">
-        <h2 className="mb-4 font-semibold">Editar chave</h2>
+        <h2 className="mb-4 font-semibold">{t("settings.editKey")}</h2>
         <form onSubmit={save} className="space-y-3">
           <label>
             <span className="label">Chave</span>

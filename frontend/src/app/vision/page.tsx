@@ -17,6 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { API_URL, api, Camera as CameraType, CameraTestResult, LocalCamera, Room } from "@/lib/api";
+import { useI18n } from "@/hooks/useI18n";
 
 function buildHikvisionUrl(ip: string, port: number, username: string, password: string, channel: string) {
   const user = encodeURIComponent(username.trim());
@@ -88,6 +89,7 @@ export default function VisionPage() {
 
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
+  const { t } = useI18n();
 
   async function load() {
     try {
@@ -218,20 +220,20 @@ export default function VisionPage() {
 
       <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-end">
         <div>
-          <div className="chip mb-3">Cameras e visao computacional</div>
-          <h1 className="page-title">Central de visao</h1>
+          <div className="chip mb-3">{t("vision.chip")}</div>
+          <h1 className="page-title">{t("vision.title")}</h1>
           <p className="mt-2 max-w-2xl text-sm text-[var(--muted)]">
-            Gerencie cameras IP e locais, teste conexoes sem LLM e analise cenas com IA.
+            {t("vision.subtitle")}
           </p>
         </div>
         <div className="flex gap-2">
           <button className="btn btn-secondary" onClick={() => { load(); scanLocal(); }}>
             <RefreshCw size={16} />
-            Recarregar
+            {t("vision.reload")}
           </button>
           <button className="btn" onClick={() => setFormOpen((v) => !v)}>
             <Plus size={16} />
-            Nova camera
+            {t("vision.addCamera")}
           </button>
         </div>
       </div>
@@ -342,11 +344,11 @@ export default function VisionPage() {
           <div className="panel overflow-hidden">
             <div className="flex items-center gap-2 border-b border-[var(--line)] px-5 py-3 font-semibold">
               <Wifi size={16} />
-              Cameras registradas ({cameras.length})
+              {t("vision.registered")} ({cameras.length})
             </div>
             {cameras.length === 0 ? (
               <div className="p-8 text-center text-sm text-[var(--muted)]">
-                Nenhuma camera cadastrada. Clique em "Nova camera" para adicionar.
+                {t("vision.noCamera")}
               </div>
             ) : (
               <div className="divide-y divide-[var(--line)]">
@@ -376,14 +378,14 @@ export default function VisionPage() {
                           onClick={() => testExistingCamera(cam)}
                         >
                           <Play size={13} />
-                          Testar
+                          {t("vision.test")}
                         </button>
                         <button
                           className="btn btn-secondary px-3 py-1.5 text-xs"
                           onClick={() => setStreamModal({ source: room?.name ?? "default", name: cam.name })}
                         >
                           <MonitorPlay size={13} />
-                          Stream
+                          {t("vision.stream")}
                         </button>
                         <button
                           className="rounded-lg border border-red-500/30 px-3 py-1.5 text-xs text-red-400 hover:bg-red-500/10 transition-colors"
@@ -405,16 +407,16 @@ export default function VisionPage() {
             <div className="flex items-center justify-between border-b border-[var(--line)] px-5 py-3">
               <div className="flex items-center gap-2 font-semibold">
                 <Cpu size={16} />
-                Cameras locais detectadas ({localCameras.length})
+                {t("vision.local")} ({localCameras.length})
               </div>
               <button className="btn btn-secondary px-3 py-1.5 text-xs" disabled={loadingLocal} onClick={scanLocal}>
                 <RefreshCw size={13} className={loadingLocal ? "animate-spin" : ""} />
-                Escanear
+                {t("vision.scan")}
               </button>
             </div>
             {localCameras.length === 0 ? (
               <div className="p-8 text-center text-sm text-[var(--muted)]">
-                {loadingLocal ? "Escaneando dispositivos..." : "Nenhuma camera local detectada."}
+                {loadingLocal ? t("vision.scanning") : t("vision.noLocal")}
               </div>
             ) : (
               <div className="divide-y divide-[var(--line)]">
@@ -443,12 +445,12 @@ export default function VisionPage() {
           <form onSubmit={analyze} className="panel p-5 space-y-4">
             <h2 className="flex items-center gap-2 font-semibold">
               <Search size={16} />
-              Analise de cena
+              {t("vision.sceneAnalysis")}
             </h2>
             <label>
               <span className="label">Comodo</span>
               <select className="control" value={selectedRoom} onChange={(e) => setSelectedRoom(e.target.value)}>
-                <option value="">Camera padrao</option>
+                <option value="">{t("vision.defaultCamera")}</option>
                 {rooms.map((room) => (
                   <option key={room.id} value={room.name}>
                     {room.friendly_name || room.name}
@@ -458,7 +460,7 @@ export default function VisionPage() {
             </label>
             <button className="btn btn-accent w-full" disabled={analyzeBusy}>
               <Search size={16} />
-              {analyzeBusy ? "Processando..." : "Analisar com IA"}
+              {analyzeBusy ? t("vision.analyzing") : t("vision.analyze")}
             </button>
             {description && (
               <div className="rounded-xl bg-[var(--soft)] p-4 text-sm leading-6 text-[var(--muted)]">
@@ -476,7 +478,7 @@ export default function VisionPage() {
             <div className="panel overflow-hidden">
               <div className="border-b border-[var(--line)] px-4 py-3 text-sm font-semibold flex items-center gap-2">
                 <MonitorPlay size={15} />
-                Stream ao vivo
+                {t("vision.liveStream")}
               </div>
               <select
                 className="control m-3"
