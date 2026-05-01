@@ -10,6 +10,7 @@ export default function MemoryPage() {
   const [filename, setFilename] = useState("");
   const [content, setContent] = useState("");
   const [message, setMessage] = useState("");
+  const { t } = useI18n();
 
   async function load() {
     setMemories(await api.memories());
