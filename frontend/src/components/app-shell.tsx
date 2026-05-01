@@ -229,7 +229,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             ))}
           </div>
 
-          {/* Gateway badge */}
+          {/* Gateway + version badge */}
           <div
             className="rounded-xl p-3 text-xs"
             style={{
@@ -243,6 +243,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
             <div className="truncate text-[var(--muted)] opacity-70">
               {process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}
+            </div>
+            <div className="mt-2 flex items-center justify-between">
+              <span className="text-[var(--muted)] opacity-50">
+                UI v{FRONTEND_VERSION}
+              </span>
+              {backendVersion && (
+                <span
+                  className="rounded-md px-1.5 py-0.5 font-mono font-semibold"
+                  style={{
+                    background: "rgba(0,212,255,0.08)",
+                    border: "1px solid rgba(0,212,255,0.15)",
+                    color: "var(--accent)",
+                  }}
+                >
+                  API v{backendVersion}
+                </span>
+              )}
             </div>
           </div>
         </div>
