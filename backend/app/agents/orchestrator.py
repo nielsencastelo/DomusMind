@@ -90,9 +90,26 @@ def _route_intent(state: AgentState) -> str:
     return state.get("intent", "outro")
 
 
+_CAMERA_EXTRACT_PROMPT = (
+    "Extract the camera name from the user's message. "
+    "Return only the camera name (e.g. 'sala', 'garagem', 'entrada') or empty string if not specified. "
+    "No explanations."
+)
+
+
 async def _run_vision(state: AgentState) -> AgentState:
+    camera_name: str | None = None
     try:
-        description = await _vision.describe()
+        msgs = _router.build_messages(state["user_input"], system_prompt=_CAMERA_EXTRACT_PROMPT)
+        raw, _ = await _router.ainvoke(msgs, temperature=0.0)
+        extracted = raw.strip().lower()
+        if extracted and extracted not in {"", "none", "null"}:
+            camera_name = extracted
+    except Exception:
+        pass
+
+    try:
+        description = await _vision.describe(camera_name=camera_name)
         state["vision_context"] = description
     except Exception as exc:
         state["vision_context"] = f"Erro ao acessar câmera: {exc}"

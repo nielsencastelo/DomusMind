@@ -193,3 +193,11 @@ class RoomRepository:
         result = await self.db.execute(select(Camera))
         camera = result.scalars().first()
         return camera.source_url if camera else None
+
+    async def get_camera_by_name(self, name: str) -> Camera | None:
+        """Case-insensitive search for a camera by name across all rooms."""
+        from sqlalchemy import func as sqlfunc
+        result = await self.db.execute(
+            select(Camera).where(sqlfunc.lower(Camera.name) == name.strip().lower())
+        )
+        return result.scalar_one_or_none()
