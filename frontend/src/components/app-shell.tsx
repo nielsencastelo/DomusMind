@@ -17,20 +17,30 @@ import {
   Zap,
 } from "lucide-react";
 import { api, type ServiceStatus } from "@/lib/api";
+import { useDomusStore } from "@/lib/store";
+import { useI18n } from "@/hooks/useI18n";
 
-const nav = [
-  { href: "/",         label: "Painel",       icon: Home },
-  { href: "/chat",     label: "Chat",          icon: MessageSquare },
-  { href: "/vision",   label: "Visão",         icon: Camera },
-  { href: "/lab",      label: "Testes",        icon: FlaskConical },
-  { href: "/devices",  label: "Dispositivos",  icon: CircuitBoard },
-  { href: "/memory",   label: "Memória",       icon: Database },
-  { href: "/settings", label: "Ajustes",       icon: Settings },
+const navItems = [
+  { href: "/",         key: "nav.dashboard" as const, icon: Home },
+  { href: "/chat",     key: "nav.chat"      as const, icon: MessageSquare },
+  { href: "/vision",   key: "nav.vision"    as const, icon: Camera },
+  { href: "/lab",      key: "nav.lab"       as const, icon: FlaskConical },
+  { href: "/devices",  key: "nav.devices"   as const, icon: CircuitBoard },
+  { href: "/memory",   key: "nav.memory"    as const, icon: Database },
+  { href: "/settings", key: "nav.settings"  as const, icon: Settings },
+];
+
+const LOCALES = [
+  { code: "pt" as const, label: "PT" },
+  { code: "en" as const, label: "EN" },
+  { code: "es" as const, label: "ES" },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [compute, setCompute] = useState<ServiceStatus | null>(null);
+  const { t, locale } = useI18n();
+  const setLocale = useDomusStore((s) => s.setLocale);
 
   useEffect(() => {
     let mounted = true;
@@ -101,7 +111,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             >
               DomusMind
             </strong>
-            <span className="text-xs text-[var(--muted)]">Casa, memória e agentes</span>
+            <span className="text-xs text-[var(--muted)]">{t("app.tagline")}</span>
           </span>
         </Link>
 
@@ -110,7 +120,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         {/* Nav */}
         <nav className="flex-1 mt-4 px-3 space-y-0.5">
-          {nav.map((item) => {
+          {navItems.map((item) => {
             const Icon = item.icon;
             const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
             return (
@@ -124,7 +134,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 }`}
               >
                 <Icon size={17} />
-                {item.label}
+                {t(item.key)}
               </Link>
             );
           })}
