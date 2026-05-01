@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Lightbulb, Power, PowerOff, RefreshCw } from "lucide-react";
 import { api, HaState, Room } from "@/lib/api";
+import { useI18n } from "@/hooks/useI18n";
 
 export default function DevicesPage() {
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -10,6 +11,7 @@ export default function DevicesPage() {
   const [message, setMessage] = useState("");
   const [manualRoom, setManualRoom] = useState("sala");
   const [manualAction, setManualAction] = useState<"on" | "off">("on");
+  const { t } = useI18n();
 
   async function load() {
     const [nextRooms, nextStates] = await Promise.all([
@@ -47,12 +49,12 @@ export default function DevicesPage() {
     <section className="space-y-5">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
-          <h1 className="page-title">Dispositivos</h1>
-          <p className="mt-2 text-sm text-[var(--muted)]">Controle rapido dos dispositivos cadastrados por comodo.</p>
+          <h1 className="page-title">{t("devices.title")}</h1>
+          <p className="mt-2 text-sm text-[var(--muted)]">{t("devices.subtitle")}</p>
         </div>
         <button className="btn btn-secondary w-fit" onClick={load}>
           <RefreshCw size={16} />
-          Atualizar
+          {t("devices.reload")}
         </button>
       </div>
 
@@ -60,18 +62,18 @@ export default function DevicesPage() {
 
       <form onSubmit={submitManual} className="panel grid gap-3 p-4 md:grid-cols-[1fr_10rem_auto] md:items-end">
         <label>
-          <span className="label">Comodo</span>
+          <span className="label">{t("devices.room")}</span>
           <input className="control" value={manualRoom} onChange={(event) => setManualRoom(event.target.value)} />
         </label>
         <label>
-          <span className="label">Acao</span>
+          <span className="label">{t("devices.action")}</span>
           <select className="control" value={manualAction} onChange={(event) => setManualAction(event.target.value as "on" | "off")}>
             <option value="on">on</option>
             <option value="off">off</option>
           </select>
         </label>
         <button className="btn" disabled={!manualRoom.trim()}>
-          Testar luz
+          {t("devices.execute")}
         </button>
       </form>
 

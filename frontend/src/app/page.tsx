@@ -432,7 +432,7 @@ export default function DashboardPage() {
           >
             <div className="flex items-center gap-2 mb-3">
               <Cpu size={14} className="text-[var(--accent)]" />
-              <span className="text-sm font-semibold">Infraestrutura</span>
+              <span className="text-sm font-semibold">{t("dashboard.infrastructure")}</span>
             </div>
             <div className="grid grid-cols-2 gap-2">
               {[
