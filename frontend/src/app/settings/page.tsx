@@ -8,6 +8,7 @@ import {
   Database,
   Home,
   KeyRound,
+  Mic,
   MessageSquareText,
   Settings2,
 } from "lucide-react";
@@ -43,6 +44,12 @@ const sections = [
     title: "Visao",
     description: "Provider visual, Gemini Vision, YOLO, pesos e parametros.",
     icon: Camera,
+  },
+  {
+    href: "/settings/audio",
+    title: "Audio e voz",
+    description: "Whisper, TTS, voz de referencia, idioma e teste de fala.",
+    icon: Mic,
   },
   {
     href: "/settings/rooms",

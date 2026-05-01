@@ -80,6 +80,21 @@ export type CameraTestResult = {
   snapshot_base64?: string | null;
 };
 
+export type TranscriptionResponse = {
+  ok: boolean;
+  text: string;
+};
+
+export type AudioConfig = {
+  audio_sample_rate: number;
+  whisper_model: string;
+  whisper_compute_type: string;
+  tts_model_name: string;
+  tts_speaker_wav: string;
+  tts_language: string;
+  tts_voice_ready: boolean;
+};
+
 export type LocalCamera = {
   index: number;
   device_path: string;
@@ -218,6 +233,40 @@ export const api = {
     request<{ ok: boolean; message: string }>("/api/v1/chat/speech", {
       method: "POST",
       body: JSON.stringify({ text }),
+    }),
+  speechAudio: async (text: string) => {
+    const response = await fetch(`${API_URL}/api/v1/chat/speech-audio`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+      cache: "no-store",
+    });
+    if (!response.ok) {
+      const detail = await response.text();
+      throw new Error(detail || `Request failed with ${response.status}`);
+    }
+    return response.blob();
+  },
+  transcribeAudio: async (file: Blob, language = "pt") => {
+    const form = new FormData();
+    form.append("file", file, "audio.webm");
+    form.append("language", language);
+    const response = await fetch(`${API_URL}/api/v1/chat/transcribe-file`, {
+      method: "POST",
+      body: form,
+      cache: "no-store",
+    });
+    if (!response.ok) {
+      const detail = await response.text();
+      throw new Error(detail || `Request failed with ${response.status}`);
+    }
+    return response.json() as Promise<TranscriptionResponse>;
+  },
+  getAudioConfig: () => request<AudioConfig>("/api/v1/chat/audio/config"),
+  setAudioConfig: (payload: Partial<AudioConfig>) =>
+    request<AudioConfig>("/api/v1/chat/audio/config", {
+      method: "POST",
+      body: JSON.stringify(payload),
     }),
   describeVision: (room: string | null) =>
     request<{ ok: boolean; room: string | null; description: string }>("/api/v1/vision/describe", {

@@ -1,10 +1,19 @@
 import uuid
+import tempfile
+import wave
+from io import BytesIO
+from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, WebSocket, WebSocketDisconnect
+from fastapi.responses import Response
+from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.orchestrator import agent_graph
 from app.agents.state import AgentState
+from app.core.database import get_db
 from app.core.redis import session_get
+from app.core.settings import settings
 from app.models.schemas import (
     AgentTestRequest,
     AgentTestResponse,
@@ -34,6 +43,58 @@ AGENT_PROMPTS = {
     "luz": LIGHT_PARSE_SYSTEM_PROMPT,
     "memoria": FINAL_RESPONSE_SYSTEM_PROMPT,
 }
+
+
+class AudioConfigOut(BaseModel):
+    audio_sample_rate: int
+    whisper_model: str
+    whisper_compute_type: str
+    tts_model_name: str
+    tts_speaker_wav: str
+    tts_language: str
+    tts_voice_ready: bool
+
+
+class AudioConfigIn(BaseModel):
+    audio_sample_rate: int | None = None
+    whisper_model: str | None = None
+    whisper_compute_type: str | None = None
+    tts_model_name: str | None = None
+    tts_speaker_wav: str | None = None
+    tts_language: str | None = None
+
+
+async def _audio_config(db: AsyncSession) -> AudioConfigOut:
+    from app.repositories.config_repo import ConfigRepository
+
+    repo = ConfigRepository(db)
+    sample_rate = await repo.get("audio.sample_rate")
+    whisper_model = await repo.get("audio.whisper_model")
+    whisper_compute_type = await repo.get("audio.whisper_compute_type")
+    tts_model_name = await repo.get("audio.tts_model_name")
+    tts_speaker_wav = await repo.get("audio.tts_speaker_wav")
+    tts_language = await repo.get("audio.tts_language")
+    speaker_wav = str(tts_speaker_wav or settings.tts_speaker_wav)
+
+    return AudioConfigOut(
+        audio_sample_rate=int(sample_rate) if sample_rate is not None else settings.audio_sample_rate,
+        whisper_model=str(whisper_model or settings.whisper_model),
+        whisper_compute_type=str(whisper_compute_type or settings.whisper_compute_type),
+        tts_model_name=str(tts_model_name or settings.tts_model_name),
+        tts_speaker_wav=speaker_wav,
+        tts_language=str(tts_language or settings.tts_language),
+        tts_voice_ready=Path(speaker_wav).exists(),
+    )
+
+
+def _wav_response(pcm: bytes, sample_rate: int) -> Response:
+    buffer = BytesIO()
+    with wave.open(buffer, "wb") as wav_file:
+        wav_file.setnchannels(1)
+        wav_file.setsampwidth(2)
+        wav_file.setframerate(sample_rate)
+        wav_file.writeframes(pcm)
+    return Response(content=buffer.getvalue(), media_type="audio/wav")
 
 
 @router.post("", response_model=ChatResponse)
@@ -164,6 +225,43 @@ async def transcribe():
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
+@router.post("/transcribe-file", response_model=TranscriptionResponse)
+async def transcribe_file(
+    file: UploadFile = File(...),
+    language: str = Form("pt"),
+    db: AsyncSession = Depends(get_db),
+):
+    """Transcribe audio recorded in the browser."""
+    suffix = Path(file.filename or "audio.webm").suffix or ".webm"
+    tmp_path = ""
+    try:
+        content = await file.read()
+        if not content:
+            raise HTTPException(status_code=422, detail="Arquivo de audio vazio.")
+
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+            tmp.write(content)
+            tmp_path = tmp.name
+
+        from app.services.audio_service import AudioService
+
+        cfg = await _audio_config(db)
+        audio = AudioService(
+            sample_rate=cfg.audio_sample_rate,
+            model_name=cfg.whisper_model,
+            compute_type=cfg.whisper_compute_type,
+        )
+        text = audio.transcribe_file(tmp_path, language=language)
+        return TranscriptionResponse(ok=True, text=text)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+    finally:
+        if tmp_path:
+            Path(tmp_path).unlink(missing_ok=True)
+
+
 @router.post("/speech", response_model=OkResponse)
 async def speak(payload: SpeechRequest):
     """Convert text to speech and play on server speaker."""
@@ -174,6 +272,49 @@ async def speak(payload: SpeechRequest):
         return OkResponse(ok=True, message="Áudio reproduzido com sucesso.")
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.post("/speech-audio")
+async def speech_audio(payload: SpeechRequest, db: AsyncSession = Depends(get_db)):
+    """Convert text to a WAV response for browser playback."""
+    try:
+        from app.services.speech_service import SpeechService
+
+        cfg = await _audio_config(db)
+        svc = SpeechService(
+            model_name=cfg.tts_model_name,
+            speaker_wav=cfg.tts_speaker_wav,
+            language=cfg.tts_language,
+        )
+        pcm, sample_rate = svc.synthesize_to_bytes(payload.text)
+        return _wav_response(pcm, sample_rate)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.get("/audio/config", response_model=AudioConfigOut)
+async def get_audio_config(db: AsyncSession = Depends(get_db)):
+    return await _audio_config(db)
+
+
+@router.post("/audio/config", response_model=AudioConfigOut)
+async def set_audio_config(payload: AudioConfigIn, db: AsyncSession = Depends(get_db)):
+    from app.repositories.config_repo import ConfigRepository
+
+    repo = ConfigRepository(db)
+    if payload.audio_sample_rate is not None:
+        await repo.set("audio.sample_rate", payload.audio_sample_rate, "Taxa de amostragem do audio")
+    if payload.whisper_model is not None:
+        await repo.set("audio.whisper_model", payload.whisper_model, "Modelo faster-whisper")
+    if payload.whisper_compute_type is not None:
+        await repo.set("audio.whisper_compute_type", payload.whisper_compute_type, "Compute type do Whisper")
+    if payload.tts_model_name is not None:
+        await repo.set("audio.tts_model_name", payload.tts_model_name, "Modelo TTS")
+    if payload.tts_speaker_wav is not None:
+        await repo.set("audio.tts_speaker_wav", payload.tts_speaker_wav, "Audio de referencia da voz")
+    if payload.tts_language is not None:
+        await repo.set("audio.tts_language", payload.tts_language, "Idioma do TTS")
+    return await _audio_config(db)
 
 
 @router.get("/history/{session_id}")

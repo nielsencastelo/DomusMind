@@ -11,15 +11,22 @@ from app.core.settings import settings
 
 
 class SpeechService:
-    def __init__(self):
+    def __init__(
+        self,
+        model_name: str | None = None,
+        speaker_wav: str | None = None,
+        language: str | None = None,
+    ):
         self.device = torch_device()
-        self.speaker_wav = Path(settings.tts_speaker_wav)
+        self.model_name = model_name or settings.tts_model_name
+        self.speaker_wav = Path(speaker_wav or settings.tts_speaker_wav)
+        self.language = language or settings.tts_language
         self._tts: TTS | None = None
 
     def _get_tts(self) -> TTS:
         if self._tts is None:
             self._tts = TTS(
-                model_name=settings.tts_model_name,
+                model_name=self.model_name,
                 progress_bar=False,
             ).to(self.device)
         return self._tts
@@ -37,7 +44,7 @@ class SpeechService:
         wav = tts.tts(
             text=self._clean(text),
             speaker_wav=str(self.speaker_wav),
-            language=settings.tts_language,
+            language=self.language,
         )
         sr = (
             getattr(getattr(tts, "synthesizer", None), "output_sample_rate", None)
@@ -57,7 +64,7 @@ class SpeechService:
         wav = tts.tts(
             text=self._clean(text),
             speaker_wav=str(self.speaker_wav),
-            language=settings.tts_language,
+            language=self.language,
         )
         sr = (
             getattr(getattr(tts, "synthesizer", None), "output_sample_rate", None)

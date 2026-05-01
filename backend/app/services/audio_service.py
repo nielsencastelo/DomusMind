@@ -8,19 +8,37 @@ from app.core.settings import settings
 
 
 class AudioService:
-    def __init__(self):
-        self.sample_rate = settings.audio_sample_rate
+    def __init__(
+        self,
+        sample_rate: int | None = None,
+        model_name: str | None = None,
+        compute_type: str | None = None,
+    ):
+        self.sample_rate = sample_rate or settings.audio_sample_rate
+        self.model_name = model_name or settings.whisper_model
+        self.compute_type = compute_type or settings.whisper_compute_type
         self.device = torch_device()
         self._model: WhisperModel | None = None
 
     def _get_model(self) -> WhisperModel:
         if self._model is None:
             self._model = WhisperModel(
-                settings.whisper_model,
-                compute_type=settings.whisper_compute_type,
+                self.model_name,
+                compute_type=self.compute_type,
                 device=self.device,
             )
         return self._model
+
+    def transcribe_file(self, path: str, language: str = "pt") -> str:
+        model = self._get_model()
+        segments, _ = model.transcribe(
+            path,
+            language=language,
+            beam_size=5,
+            best_of=5,
+            vad_filter=True,
+        )
+        return " ".join(s.text for s in segments).strip()
 
     def transcribe_array(self, audio: np.ndarray, language: str = "pt") -> str:
         model = self._get_model()

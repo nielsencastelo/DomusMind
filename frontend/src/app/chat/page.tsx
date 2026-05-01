@@ -1,7 +1,7 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { Send, Trash2, Volume2 } from "lucide-react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Mic, MicOff, Send, Trash2, Volume2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useDomusStore } from "@/lib/store";
 import { useWebSocket } from "@/hooks/useWebSocket";
@@ -14,6 +14,11 @@ export default function ChatPage() {
   const [meta, setMeta] = useState("");
   const [busy, setBusy] = useState(false);
   const [speaking, setSpeaking] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
   const messages = useDomusStore((state) => state.messages);
   const setSessionId = useDomusStore((state) => state.setSessionId);
   const addMessage = useDomusStore((state) => state.addMessage);
@@ -25,6 +30,17 @@ export default function ChatPage() {
   useEffect(() => {
     setSessionId(sessionId);
   }, [sessionId, setSessionId]);
+
+  useEffect(() => {
+    return () => {
+      const recorder = recorderRef.current;
+      if (recorder && recorder.state !== "inactive") {
+        recorder.onstop = null;
+        recorder.stop();
+      }
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+    };
+  }, []);
 
   const handleStreamEvent = useCallback(
     (payload: StreamEvent) => {
@@ -46,16 +62,78 @@ export default function ChatPage() {
 
   const socket = useWebSocket({ sessionId, onEvent: handleStreamEvent });
 
+  const sendText = useCallback(
+    (text: string) => {
+      const clean = text.trim();
+      if (!clean || busy) return;
+      addMessage({ role: "user", content: clean });
+      addMessage({ role: "assistant", content: "" });
+      setInput("");
+      setBusy(true);
+      setMeta("processando...");
+      socket.send(clean);
+    },
+    [addMessage, busy, socket],
+  );
+
   function send(event: FormEvent) {
     event.preventDefault();
     const text = input.trim();
     if (!text || busy) return;
-    addMessage({ role: "user", content: text });
-    addMessage({ role: "assistant", content: "" });
-    setInput("");
-    setBusy(true);
-    setMeta("processando...");
-    socket.send(text);
+    sendText(text);
+  }
+
+  async function toggleRecording() {
+    if (recording) {
+      recorderRef.current?.stop();
+      setRecording(false);
+      setMeta("transcrevendo audio...");
+      return;
+    }
+
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+      setMeta("Gravacao de audio nao esta disponivel neste navegador.");
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      chunksRef.current = [];
+      const recorder = new MediaRecorder(stream);
+      recorderRef.current = recorder;
+
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) chunksRef.current.push(event.data);
+      };
+
+      recorder.onstop = async () => {
+        const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" });
+        streamRef.current?.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+        setTranscribing(true);
+        try {
+          const result = await api.transcribeAudio(blob, "pt");
+          if (!result.text.trim()) {
+            setMeta("Nao consegui identificar fala no audio.");
+            return;
+          }
+          setInput(result.text);
+          setMeta("audio transcrito, enviando...");
+          sendText(result.text);
+        } catch (err) {
+          setMeta(err instanceof Error ? err.message : "Nao foi possivel transcrever o audio.");
+        } finally {
+          setTranscribing(false);
+        }
+      };
+
+      recorder.start();
+      setRecording(true);
+      setMeta("gravando... clique novamente para parar.");
+    } catch (err) {
+      setMeta(err instanceof Error ? err.message : "Nao foi possivel acessar o microfone.");
+    }
   }
 
   async function speakLastResponse() {
@@ -64,8 +142,13 @@ export default function ChatPage() {
     setSpeaking(true);
     setMeta("gerando audio...");
     try {
-      const result = await api.speak(lastAssistant.content);
-      setMeta(result.message);
+      const blob = await api.speechAudio(lastAssistant.content);
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audio.onended = () => URL.revokeObjectURL(url);
+      audio.onerror = () => URL.revokeObjectURL(url);
+      await audio.play();
+      setMeta("audio reproduzido no navegador.");
     } catch (err) {
       setMeta(err instanceof Error ? err.message : "Nao foi possivel reproduzir audio.");
     } finally {
@@ -94,6 +177,15 @@ export default function ChatPage() {
         </div>
         <form onSubmit={send} className="flex gap-2 border-t border-[var(--line)] p-3">
           <input className="control" value={input} onChange={(event) => setInput(event.target.value)} placeholder={t("chat.placeholder")} />
+          <button
+            type="button"
+            className={`btn btn-secondary ${recording ? "border-red-400 text-red-300" : ""}`}
+            onClick={toggleRecording}
+            disabled={transcribing || busy}
+            title={recording ? "Parar gravacao" : "Gravar audio"}
+          >
+            {recording ? <MicOff size={16} /> : <Mic size={16} />}
+          </button>
           <button className="btn" disabled={busy} title={t("chat.send")}>
             <Send size={16} />
           </button>
