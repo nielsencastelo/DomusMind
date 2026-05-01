@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text, func
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -67,6 +67,12 @@ class Camera(Base):
     username: Mapped[str | None] = mapped_column(String(100))
     password: Mapped[str | None] = mapped_column(String(200))
     is_default: Mapped[bool] = mapped_column(Boolean, default=False)
+    camera_type: Mapped[str] = mapped_column(String(20), default="ip")  # ip | local | rtsp | usb
+    channel: Mapped[int | None] = mapped_column(Integer)
+    is_local: Mapped[bool] = mapped_column(Boolean, default=False)
+    device_path: Mapped[str | None] = mapped_column(String(200))
+    last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    resolution: Mapped[str | None] = mapped_column(String(20))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

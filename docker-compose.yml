@@ -35,7 +35,7 @@ services:
       DEBUG: ${DOMUSMIND_DEBUG:-false}
       DATABASE_URL: postgresql+asyncpg://domusmind:${DB_PASSWORD:-change_me_domusmind}@postgres:5432/domusmind
       REDIS_URL: redis://:${REDIS_PASSWORD:-change_me_redis}@redis:6379/0
-      HASS_URL: ${HASS_URL:-http://localhost:8123}
+      HASS_URL: ${HASS_URL:-http://homeassistant:8123}
       HASS_TOKEN: ${HASS_TOKEN:-}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.0-flash}
@@ -73,7 +73,7 @@ services:
       NVIDIA_DRIVER_CAPABILITIES: compute,utility,video
       DATABASE_URL: postgresql+asyncpg://domusmind:${DB_PASSWORD:-change_me_domusmind}@postgres:5432/domusmind
       REDIS_URL: redis://:${REDIS_PASSWORD:-change_me_redis}@redis:6379/0
-      HASS_URL: ${HASS_URL:-http://localhost:8123}
+      HASS_URL: ${HASS_URL:-http://homeassistant:8123}
       HASS_TOKEN: ${HASS_TOKEN:-}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
@@ -98,7 +98,7 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://domusmind:${DB_PASSWORD:-change_me_domusmind}@postgres:5432/domusmind
       REDIS_URL: redis://:${REDIS_PASSWORD:-change_me_redis}@redis:6379/0
-      HASS_URL: ${HASS_URL:-http://localhost:8123}
+      HASS_URL: ${HASS_URL:-http://homeassistant:8123}
       HASS_TOKEN: ${HASS_TOKEN:-}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
@@ -121,8 +121,9 @@ services:
 
   homeassistant:
     image: homeassistant/home-assistant:stable
-    network_mode: host
     privileged: true
+    ports:
+      - "8123:8123"
     volumes:
       - ha_config:/config
     environment:
