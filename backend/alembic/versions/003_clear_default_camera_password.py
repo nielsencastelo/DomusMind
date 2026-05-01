@@ -1,4 +1,4 @@
-"""Clear hardcoded default camera password.
+"""Clear saved camera passwords.
 
 Revision ID: 003_clear_default_camera_password
 Revises: 002
@@ -20,10 +20,10 @@ def upgrade() -> None:
         UPDATE cameras
         SET
             password = NULL,
-            source_url = replace(source_url, ':globalsys123@', '@')
+            source_url = regexp_replace(source_url, '://([^:/@]+):[^@]+@', '://\\1@')
         WHERE
-            password = 'globalsys123'
-            OR source_url LIKE '%:globalsys123@%';
+            password IS NOT NULL
+            OR source_url ~ '://[^:/@]+:[^@]+@';
         """
     )
 
