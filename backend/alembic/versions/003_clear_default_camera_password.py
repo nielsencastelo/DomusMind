@@ -1,7 +1,7 @@
 """Clear hardcoded default camera password.
 
 Revision ID: 003_clear_default_camera_password
-Revises: 002_camera_fields
+Revises: 002
 Create Date: 2026-05-01
 """
 
@@ -9,7 +9,7 @@ from alembic import op
 
 
 revision = "003_clear_default_camera_password"
-down_revision = "002_camera_fields"
+down_revision = "002"
 branch_labels = None
 depends_on = None
 
