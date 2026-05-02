@@ -11,14 +11,19 @@ export function yoloModelDescription(name: string): string {
   return "Modelo de visao local. Quanto maior o modelo, melhor tende a ser a precisao e maior o custo de processamento.";
 }
 
+export function isLikelyVisionModel(id: string): boolean {
+  const model = id.toLowerCase();
+  return /vision|llava|moondream|bakllava|minicpm-v|gemma.*vision|qwen.*vl|qwen.*vision|pixtral/.test(model);
+}
+
 export function llmModelDescription(provider: ProviderKey, id: string): string {
   const model = id.toLowerCase();
 
   if (provider === "local") {
+    if (isLikelyVisionModel(model)) return "Modelo local multimodal. Use para analisar imagens/camera no Ollama Vision.";
     if (model.includes("nomic-embed")) return "Embedding local para memoria/RAG. Nao e modelo de conversa.";
     if (model.includes("phi")) return "Modelo local leve e rapido. Bom para classificacao, automacao e respostas curtas.";
     if (model.includes("llama") || model.includes("qwen") || model.includes("mistral")) return "Modelo local de conversa. Privado e sem custo por API, mas depende da sua maquina.";
-    if (model.includes("vision") || model.includes("llava")) return "Modelo local multimodal. Pode analisar imagens se o fluxo suportar entrada visual.";
     return "Modelo instalado no Ollama local. Melhor para privacidade, testes offline e tarefas simples.";
   }
 
@@ -46,4 +51,3 @@ export function llmModelDescription(provider: ProviderKey, id: string): string {
 
   return "Modelo disponivel no provedor selecionado.";
 }
-

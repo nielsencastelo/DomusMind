@@ -187,14 +187,18 @@ class VisionService:
     async def ollama_describe(self, source: str | int, base_url: str, model_name: str) -> str:
         import httpx
 
+        if not model_name:
+            return "Modelo Ollama Vision nao configurado."
+
         frame = self.capture_frame(source)
         if frame is None:
             return "Nao foi possivel capturar imagem da camera."
 
         image_b64 = self.frame_to_base64(frame)
         async with httpx.AsyncClient(timeout=120) as client:
+            url = base_url.rstrip("/") + "/api/generate"
             response = await client.post(
-                base_url.rstrip("/") + "/api/generate",
+                url,
                 json={
                     "model": model_name,
                     "prompt": self._visual_prompt(),
@@ -278,7 +282,13 @@ class VisionService:
             try:
                 return await self.ollama_describe(src, cfg["ollama_base_url"], cfg["ollama_model"])
             except Exception as exc:
-                return f"Nao foi possivel analisar a imagem com Ollama Vision ({cfg['ollama_model']}): {exc}"
+                error = str(exc) or exc.__class__.__name__
+                return (
+                    "Nao foi possivel analisar a imagem com Ollama Vision "
+                    f"({cfg['ollama_model']}) em {cfg['ollama_base_url']}: {error}. "
+                    "Verifique se o Ollama esta rodando, se o modelo esta instalado e se "
+                    "o container consegue acessar host.docker.internal:11434."
+                )
 
         return self.yolo_describe(
             src,

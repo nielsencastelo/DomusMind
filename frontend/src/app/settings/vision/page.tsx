@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { Bot, Download, Eye, Key, RefreshCw, Save, Sliders } from "lucide-react";
 import { api, ModelInfo, VisionConfig, YoloModelInfo } from "@/lib/api";
 import { useI18n } from "@/hooks/useI18n";
-import { yoloModelDescription } from "@/lib/modelInfo";
+import { isLikelyVisionModel, llmModelDescription, yoloModelDescription } from "@/lib/modelInfo";
 import { SettingsBackButton } from "@/components/SettingsBackButton";
 
 export default function VisionSettingsPage() {
@@ -52,7 +52,7 @@ export default function VisionSettingsPage() {
   async function loadOllamaModels() {
     try {
       const result = await api.llmModels("local");
-      setOllamaModels(result.models.filter((item) => /vision|llava|moondream|bakllava|minicpm-v/i.test(item.id)));
+      setOllamaModels(result.models);
     } catch {
       setOllamaModels([]);
     }
@@ -105,6 +105,9 @@ export default function VisionSettingsPage() {
       setBusy(false);
     }
   }
+
+  const visionOllamaModels = ollamaModels.filter((item) => isLikelyVisionModel(item.id));
+  const otherOllamaModels = ollamaModels.filter((item) => !isLikelyVisionModel(item.id));
 
   return (
     <section className="max-w-2xl space-y-6">
@@ -229,27 +232,66 @@ export default function VisionSettingsPage() {
                 </button>
               </div>
               <datalist id="vision-ollama-models">
-                {ollamaModels.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+                {visionOllamaModels.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
               </datalist>
               <span className="mt-1 block text-xs text-[var(--muted)]">
                 Use um modelo que aceite imagem, por exemplo llama3.2-vision, llava ou outro multimodal instalado no Ollama.
               </span>
             </label>
-            {ollamaModels.length > 0 && (
-              <div className="grid gap-2">
-                {ollamaModels.map((item) => (
+            <div className="rounded-xl border border-[var(--line)]">
+              <div className="flex items-center justify-between gap-3 border-b border-[var(--line)] px-3 py-2">
+                <span className="text-sm font-medium">Modelos de visao locais</span>
+                <span className="text-xs text-[var(--muted)]">{visionOllamaModels.length} detectado(s)</span>
+              </div>
+              <div className="divide-y divide-[var(--line)]">
+                {visionOllamaModels.map((item) => (
                   <button
                     key={item.id}
                     type="button"
-                    className="rounded-lg border border-[var(--line)] p-3 text-left text-xs hover:bg-[var(--soft)]"
+                    className={`block w-full px-3 py-3 text-left text-xs hover:bg-[var(--soft)] ${
+                      ollamaModel === item.id ? "text-[var(--accent)]" : ""
+                    }`}
                     onClick={() => setOllamaModel(item.id)}
                   >
                     <div className="font-medium">{item.id}</div>
-                    <div className="mt-1 text-[var(--muted)]">
-                      Modelo local multimodal: ve o frame real da camera e descreve ambiente, pessoas e objetos visiveis.
+                    {item.name !== item.id && <div className="text-[var(--muted)]">{item.name}</div>}
+                    <div className="mt-1 leading-5 text-[var(--muted)]">
+                      {llmModelDescription("local", item.id)}
                     </div>
                   </button>
                 ))}
+                {visionOllamaModels.length === 0 && (
+                  <div className="px-3 py-4 text-sm text-[var(--muted)]">
+                    Nenhum modelo de visao foi detectado pelo nome. Clique em atualizar depois de instalar um modelo como llama3.2-vision ou llava.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {otherOllamaModels.length > 0 && (
+              <div className="rounded-xl border border-[var(--line)]">
+                <div className="border-b border-[var(--line)] px-3 py-2">
+                  <span className="text-sm font-medium">Outros modelos locais</span>
+                  <p className="mt-1 text-xs text-[var(--muted)]">
+                    Use somente se voce souber que o modelo aceita imagem; modelos apenas de texto nao conseguem enxergar a camera.
+                  </p>
+                </div>
+                <div className="max-h-48 divide-y divide-[var(--line)] overflow-auto">
+                  {otherOllamaModels.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className="block w-full px-3 py-3 text-left text-xs hover:bg-[var(--soft)]"
+                      onClick={() => setOllamaModel(item.id)}
+                    >
+                      <div className="font-medium">{item.id}</div>
+                      {item.name !== item.id && <div className="text-[var(--muted)]">{item.name}</div>}
+                      <div className="mt-1 leading-5 text-[var(--muted)]">
+                        {llmModelDescription("local", item.id)}
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </div>
