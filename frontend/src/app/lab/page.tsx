@@ -28,6 +28,7 @@ export default function LabPage() {
   const [providerUsed, setProviderUsed] = useState("");
   const [modelUsed, setModelUsed] = useState("");
   const [visionContext, setVisionContext] = useState("");
+  const [searchContext, setSearchContext] = useState("");
   const [busy, setBusy] = useState(false);
   const { t } = useI18n();
 
@@ -81,6 +82,7 @@ export default function LabPage() {
     setProviderUsed("");
     setModelUsed("");
     setVisionContext("");
+    setSearchContext("");
     try {
       const result = await api.testAgent({
         agent,
@@ -92,6 +94,7 @@ export default function LabPage() {
       setProviderUsed(result.provider_used);
       setModelUsed(result.model_used || "");
       setVisionContext(result.vision_context || "");
+      setSearchContext(result.search_context || "");
       setResponse(result.response);
     } catch (err) {
       setResponse(err instanceof Error ? err.message : "Falha no teste do agente.");
@@ -127,6 +130,7 @@ export default function LabPage() {
                 setProviderUsed("");
                 setModelUsed("");
                 setVisionContext("");
+                setSearchContext("");
               }}
             >
               {item.label}
@@ -225,6 +229,12 @@ export default function LabPage() {
             <div className="mb-3 max-w-4xl rounded-2xl border border-[var(--line)] bg-[var(--panel)] p-4 text-sm leading-7">
               <div className="mb-2 font-semibold text-[var(--accent)]">Contexto real de visao usado</div>
               <div className="whitespace-pre-wrap text-[var(--muted)]">{visionContext}</div>
+            </div>
+          )}
+          {searchContext && (
+            <div className="mb-3 max-w-4xl rounded-2xl border border-[var(--line)] bg-[var(--panel)] p-4 text-sm leading-7">
+              <div className="mb-2 font-semibold text-[var(--accent)]">Pesquisa web real usada</div>
+              <div className="whitespace-pre-wrap text-[var(--muted)]">{searchContext}</div>
             </div>
           )}
           <div className="max-w-4xl whitespace-pre-wrap rounded-2xl bg-[var(--soft)] p-4 text-sm leading-7">

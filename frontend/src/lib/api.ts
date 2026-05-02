@@ -287,7 +287,7 @@ export const api = {
     model?: string;
     temperature?: number;
   }) =>
-    request<{ agent: string; provider_used: string; model_used?: string | null; response: string; vision_context?: string | null }>("/api/v1/chat/test-agent", {
+    request<{ agent: string; provider_used: string; model_used?: string | null; response: string; vision_context?: string | null; search_context?: string | null }>("/api/v1/chat/test-agent", {
       method: "POST",
       body: JSON.stringify(payload),
     }),

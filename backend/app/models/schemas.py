@@ -46,6 +46,7 @@ class AgentTestResponse(BaseModel):
     response: str
     model_used: str | None = None
     vision_context: str | None = None
+    search_context: str | None = None
 
 
 class SpeechRequest(BaseModel):

@@ -193,6 +193,7 @@ async def test_agent(payload: AgentTestRequest):
     system = AGENT_PROMPTS[payload.agent]
     message = payload.message
     vision_context: str | None = None
+    search_context: str | None = None
 
     if payload.agent == "memoria":
         message = f"Teste de memoria/RAG sem gravar conversa:\n{payload.message}"
@@ -220,6 +221,18 @@ async def test_agent(payload: AgentTestRequest):
             "Contexto real retornado pelo modulo de visao:\n"
             f"{vision_context}"
         )
+    elif payload.agent == "pesquisa":
+        try:
+            from app.services.search_service import SearchService
+
+            search_context = SearchService().search_and_format(payload.message)
+        except Exception as exc:
+            search_context = f"Erro na busca: {exc}"
+        message = (
+            f"Comando: {payload.message}\n\n"
+            "Resultados reais da pesquisa web:\n"
+            f"{search_context}"
+        )
 
     try:
         messages = router_.build_messages(message, system_prompt=system)
@@ -238,6 +251,7 @@ async def test_agent(payload: AgentTestRequest):
         response=response,
         model_used=model or _default_model(provider, provider_configs),
         vision_context=vision_context,
+        search_context=search_context,
     )
 
 
