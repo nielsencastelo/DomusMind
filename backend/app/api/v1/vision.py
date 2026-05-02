@@ -38,14 +38,18 @@ async def _global_camera_source(db: AsyncSession) -> str:
 class VisionConfigOut(BaseModel):
     provider: str
     gemini_key_set: bool
+    ollama_base_url: str
+    ollama_model: str
     yolo_weights: str
     yolo_confidence: float
     yolo_frames: int
 
 
 class VisionConfigIn(BaseModel):
-    provider: str  # "yolo" | "gemini"
+    provider: str  # "yolo" | "gemini" | "ollama"
     gemini_api_key: str | None = None
+    ollama_base_url: str | None = None
+    ollama_model: str | None = None
     yolo_weights: str | None = None
     yolo_confidence: float | None = None
     yolo_frames: int | None = None
@@ -92,12 +96,20 @@ async def get_vision_config(db: AsyncSession = Depends(get_db)):
     repo = ConfigRepository(db)
     provider = await repo.get("vision.provider") or ("gemini" if settings.gemini_api_key else "yolo")
     api_key = await repo.get("vision.gemini_api_key") or ""
+    ollama_base_url = await repo.get("vision.ollama_base_url")
+    ollama_model = await repo.get("vision.ollama_model")
+    provider_config = await repo.get("llm.providers")
+    agent_config = await repo.get("llm.agents")
+    local_config = provider_config.get("local", {}) if isinstance(provider_config, dict) else {}
+    vision_agent = agent_config.get("visao", {}) if isinstance(agent_config, dict) else {}
     weights = await repo.get("vision.yolo_weights") or settings.yolo_weights
     confidence = await repo.get("vision.yolo_confidence")
     frames = await repo.get("vision.yolo_frames")
     return VisionConfigOut(
         provider=str(provider),
         gemini_key_set=bool(api_key),
+        ollama_base_url=str(ollama_base_url or local_config.get("base_url") or settings.ollama_base_url),
+        ollama_model=str(ollama_model or vision_agent.get("model") or local_config.get("default_model") or settings.local_model),
         yolo_weights=str(weights),
         yolo_confidence=float(confidence) if confidence is not None else 0.6,
         yolo_frames=int(frames) if frames is not None else 10,
@@ -109,13 +121,19 @@ async def set_vision_config(payload: VisionConfigIn, db: AsyncSession = Depends(
     from app.repositories.config_repo import ConfigRepository
     repo = ConfigRepository(db)
 
-    if payload.provider not in {"yolo", "gemini"}:
-        raise HTTPException(status_code=422, detail="provider deve ser 'yolo' ou 'gemini'")
+    if payload.provider not in {"yolo", "gemini", "ollama"}:
+        raise HTTPException(status_code=422, detail="provider deve ser 'yolo', 'gemini' ou 'ollama'")
 
-    await repo.set("vision.provider", payload.provider, "Provedor de visão (yolo | gemini)")
+    await repo.set("vision.provider", payload.provider, "Provedor de visao (yolo | gemini | ollama)")
 
     if payload.gemini_api_key is not None:
         await repo.set("vision.gemini_api_key", payload.gemini_api_key, "API key do Gemini Vision")
+
+    if payload.ollama_base_url is not None:
+        await repo.set("vision.ollama_base_url", payload.ollama_base_url, "Base URL do Ollama Vision")
+
+    if payload.ollama_model is not None:
+        await repo.set("vision.ollama_model", payload.ollama_model, "Modelo multimodal do Ollama Vision")
 
     if payload.yolo_weights is not None:
         await repo.set("vision.yolo_weights", payload.yolo_weights, "Caminho dos pesos YOLO")

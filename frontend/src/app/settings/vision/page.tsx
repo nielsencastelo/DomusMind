@@ -2,21 +2,24 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { Bot, Download, Eye, Key, RefreshCw, Save, Sliders } from "lucide-react";
-import { api, VisionConfig, YoloModelInfo } from "@/lib/api";
+import { api, ModelInfo, VisionConfig, YoloModelInfo } from "@/lib/api";
 import { useI18n } from "@/hooks/useI18n";
 import { yoloModelDescription } from "@/lib/modelInfo";
 import { SettingsBackButton } from "@/components/SettingsBackButton";
 
 export default function VisionSettingsPage() {
   const [config, setConfig] = useState<VisionConfig | null>(null);
-  const [provider, setProvider] = useState<"yolo" | "gemini">("gemini");
+  const [provider, setProvider] = useState<"yolo" | "gemini" | "ollama">("gemini");
   const [geminiKey, setGeminiKey] = useState("");
+  const [ollamaBaseUrl, setOllamaBaseUrl] = useState("http://host.docker.internal:11434");
+  const [ollamaModel, setOllamaModel] = useState("llama3.2-vision:11b");
   const [weights, setWeights] = useState("models/yolov8x.pt");
   const [confidence, setConfidence] = useState(0.6);
   const [frames, setFrames] = useState(10);
   const [busy, setBusy] = useState(false);
   const [downloadBusy, setDownloadBusy] = useState("");
   const [yoloModels, setYoloModels] = useState<YoloModelInfo[]>([]);
+  const [ollamaModels, setOllamaModels] = useState<ModelInfo[]>([]);
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
   const { t } = useI18n();
@@ -27,12 +30,15 @@ export default function VisionSettingsPage() {
       .then((cfg) => {
         setConfig(cfg);
         setProvider(cfg.provider);
+        setOllamaBaseUrl(cfg.ollama_base_url);
+        setOllamaModel(cfg.ollama_model);
         setWeights(cfg.yolo_weights);
         setConfidence(cfg.yolo_confidence);
         setFrames(cfg.yolo_frames);
       })
       .catch(() => setMessage("Nao foi possivel carregar configuracoes de visao."));
     loadYoloModels();
+    loadOllamaModels();
   }, []);
 
   async function loadYoloModels() {
@@ -40,6 +46,15 @@ export default function VisionSettingsPage() {
       setYoloModels(await api.yoloModels());
     } catch {
       setYoloModels([]);
+    }
+  }
+
+  async function loadOllamaModels() {
+    try {
+      const result = await api.llmModels("local");
+      setOllamaModels(result.models.filter((item) => /vision|llava|moondream|bakllava|minicpm-v/i.test(item.id)));
+    } catch {
+      setOllamaModels([]);
     }
   }
 
@@ -74,6 +89,8 @@ export default function VisionSettingsPage() {
       const updated = await api.setVisionConfig({
         provider,
         gemini_api_key: geminiKey || undefined,
+        ollama_base_url: ollamaBaseUrl,
+        ollama_model: ollamaModel,
         yolo_weights: weights,
         yolo_confidence: confidence,
         yolo_frames: frames,
@@ -107,7 +124,7 @@ export default function VisionSettingsPage() {
             <Bot size={17} />
             {t("settings.vision.provider")}
           </h2>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 md:grid-cols-3">
             <button
               type="button"
               onClick={() => setProvider("gemini")}
@@ -119,6 +136,20 @@ export default function VisionSettingsPage() {
             >
               <div className="font-semibold">{t("settings.vision.gemini")}</div>
               <div className="mt-1 text-xs text-[var(--muted)]">{t("settings.vision.geminiDesc")}</div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setProvider("ollama")}
+              className={`rounded-xl border p-4 text-left transition-all ${
+                provider === "ollama"
+                  ? "border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]"
+                  : "border-[var(--line)] hover:border-[var(--accent)]/50"
+              }`}
+            >
+              <div className="font-semibold">Ollama Vision</div>
+              <div className="mt-1 text-xs text-[var(--muted)]">
+                Envia o frame real para um modelo local multimodal, como llama3.2-vision.
+              </div>
             </button>
             <button
               type="button"
@@ -139,8 +170,9 @@ export default function VisionSettingsPage() {
               <Eye size={13} />
               <span>Provedor atual: <strong className="text-[var(--ink)]">{config.provider}</strong></span>
               {config.provider === "gemini" && (
-                <span className="ml-auto">{config.gemini_key_set ? "✓ Chave configurada" : "⚠ Chave nao configurada"}</span>
+                <span className="ml-auto">{config.gemini_key_set ? "Chave configurada" : "Chave nao configurada"}</span>
               )}
+              {config.provider === "ollama" && <span className="ml-auto">{config.ollama_model}</span>}
             </div>
           )}
         </div>
@@ -165,6 +197,61 @@ export default function VisionSettingsPage() {
                 Deixe em branco para manter a chave atual. Disponivel em console.cloud.google.com.
               </span>
             </label>
+          </div>
+        )}
+
+        {provider === "ollama" && (
+          <div className="panel p-5 space-y-4">
+            <h2 className="flex items-center gap-2 font-semibold">
+              <Eye size={17} />
+              Ollama Vision
+            </h2>
+            <label>
+              <span className="label">OLLAMA_BASE_URL</span>
+              <input
+                className="control"
+                value={ollamaBaseUrl}
+                onChange={(event) => setOllamaBaseUrl(event.target.value)}
+              />
+            </label>
+            <label>
+              <span className="label">Modelo multimodal</span>
+              <div className="flex gap-2">
+                <input
+                  className="control"
+                  list="vision-ollama-models"
+                  value={ollamaModel}
+                  onChange={(event) => setOllamaModel(event.target.value)}
+                  placeholder="llama3.2-vision:11b"
+                />
+                <button type="button" className="btn btn-secondary px-3" onClick={loadOllamaModels}>
+                  <RefreshCw size={15} />
+                </button>
+              </div>
+              <datalist id="vision-ollama-models">
+                {ollamaModels.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+              </datalist>
+              <span className="mt-1 block text-xs text-[var(--muted)]">
+                Use um modelo que aceite imagem, por exemplo llama3.2-vision, llava ou outro multimodal instalado no Ollama.
+              </span>
+            </label>
+            {ollamaModels.length > 0 && (
+              <div className="grid gap-2">
+                {ollamaModels.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className="rounded-lg border border-[var(--line)] p-3 text-left text-xs hover:bg-[var(--soft)]"
+                    onClick={() => setOllamaModel(item.id)}
+                  >
+                    <div className="font-medium">{item.id}</div>
+                    <div className="mt-1 text-[var(--muted)]">
+                      Modelo local multimodal: ve o frame real da camera e descreve ambiente, pessoas e objetos visiveis.
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

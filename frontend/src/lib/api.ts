@@ -50,8 +50,10 @@ export type Camera = {
 };
 
 export type VisionConfig = {
-  provider: "yolo" | "gemini";
+  provider: "yolo" | "gemini" | "ollama";
   gemini_key_set: boolean;
+  ollama_base_url: string;
+  ollama_model: string;
   yolo_weights: string;
   yolo_confidence: number;
   yolo_frames: number;
@@ -311,6 +313,8 @@ export const api = {
   setVisionConfig: (payload: {
     provider: string;
     gemini_api_key?: string;
+    ollama_base_url?: string;
+    ollama_model?: string;
     yolo_weights?: string;
     yolo_confidence?: number;
     yolo_frames?: number;

@@ -29,17 +29,29 @@ async def _get_vision_config(session_factory=None) -> dict:
             confidence = await repo.get("vision.yolo_confidence")
             frames = await repo.get("vision.yolo_frames")
             gemini_model = await repo.get("vision.gemini_model")
+            ollama_base_url = await repo.get("vision.ollama_base_url")
+            ollama_model = await repo.get("vision.ollama_model")
+            provider_config = await repo.get("llm.providers")
             agent_config = await repo.get("llm.agents")
 
-        if not gemini_model and isinstance(agent_config, dict):
-            vision_agent = agent_config.get("visao")
-            if isinstance(vision_agent, dict) and vision_agent.get("provider") == "gemini":
-                gemini_model = vision_agent.get("model")
+        local_config = provider_config.get("local", {}) if isinstance(provider_config, dict) else {}
+        vision_agent = agent_config.get("visao", {}) if isinstance(agent_config, dict) else {}
+        agent_provider = str(vision_agent.get("provider") or "").lower() if isinstance(vision_agent, dict) else ""
+        agent_model = str(vision_agent.get("model") or "") if isinstance(vision_agent, dict) else ""
+        if not gemini_model and agent_provider == "gemini":
+            gemini_model = vision_agent.get("model")
+        if not ollama_model and agent_provider == "local":
+            ollama_model = agent_model
+        provider_value = str(provider or "").lower()
+        if provider_value == "yolo" and agent_provider == "local" and _looks_like_vision_model(agent_model):
+            provider_value = "ollama"
 
         return {
-            "provider": provider or ("gemini" if settings.gemini_api_key else "yolo"),
+            "provider": provider_value or ("gemini" if settings.gemini_api_key else "yolo"),
             "gemini_api_key": api_key or settings.gemini_api_key or "",
             "gemini_model": gemini_model or settings.gemini_model,
+            "ollama_base_url": ollama_base_url or local_config.get("base_url") or settings.ollama_base_url,
+            "ollama_model": ollama_model or local_config.get("default_model") or settings.local_model,
             "yolo_weights": weights or settings.yolo_weights,
             "yolo_confidence": float(confidence) if confidence is not None else 0.6,
             "yolo_frames": int(frames) if frames is not None else 10,
@@ -49,10 +61,17 @@ async def _get_vision_config(session_factory=None) -> dict:
             "provider": "gemini" if settings.gemini_api_key else "yolo",
             "gemini_api_key": settings.gemini_api_key or "",
             "gemini_model": settings.gemini_model,
+            "ollama_base_url": settings.ollama_base_url,
+            "ollama_model": settings.local_model,
             "yolo_weights": settings.yolo_weights,
             "yolo_confidence": 0.6,
             "yolo_frames": 10,
         }
+
+
+def _looks_like_vision_model(model_name: str) -> bool:
+    value = model_name.lower()
+    return any(token in value for token in ("vision", "llava", "moondream", "bakllava", "minicpm-v"))
 
 
 class VisionService:
@@ -152,6 +171,43 @@ class VisionService:
         _, buffer = cv2.imencode(".jpg", frame)
         return base64.b64encode(buffer).decode("utf-8")
 
+    @staticmethod
+    def _visual_prompt() -> str:
+        return (
+            "Voce e o modulo de visao do DomusMind. Analise a imagem como uma pessoa "
+            "observando a camera em tempo real. Responda em portugues do Brasil. "
+            "Descreva primeiro o ambiente e a disposicao geral. Se houver pessoas, "
+            "descreva apenas detalhes visiveis: posicao na cena, postura, roupa aparente, "
+            "objetos proximos e acao provavel. Se algum detalhe nao estiver claro, diga "
+            "que nao e possivel confirmar. Nao invente identidade, genero, idade exata, "
+            "intencao, texto pequeno, cores ou objetos que nao estejam visiveis. "
+            "Se nao houver pessoa visivel, diga isso claramente."
+        )
+
+    async def ollama_describe(self, source: str | int, base_url: str, model_name: str) -> str:
+        import httpx
+
+        frame = self.capture_frame(source)
+        if frame is None:
+            return "Nao foi possivel capturar imagem da camera."
+
+        image_b64 = self.frame_to_base64(frame)
+        async with httpx.AsyncClient(timeout=120) as client:
+            response = await client.post(
+                base_url.rstrip("/") + "/api/generate",
+                json={
+                    "model": model_name,
+                    "prompt": self._visual_prompt(),
+                    "images": [image_b64],
+                    "stream": False,
+                    "options": {"temperature": 0.1},
+                },
+            )
+            response.raise_for_status()
+
+        text = str(response.json().get("response") or "").strip()
+        return text or "O modelo de visao local respondeu vazio."
+
     async def gemini_describe(self, source: str | int, api_key: str, model_name: str | None = None) -> str:
         from langchain_google_genai import ChatGoogleGenerativeAI
         from langchain_core.messages import HumanMessage
@@ -169,12 +225,7 @@ class VisionService:
             HumanMessage(content=[
                 {
                     "type": "text",
-                    "text": (
-                        "Você é o DomusMind, assistente doméstico. "
-                        "Descreva detalhadamente o que você vê nesta imagem "
-                        "de câmera de segurança em português do Brasil. "
-                        "Inclua pessoas, objetos, atividades e qualquer coisa relevante."
-                    ),
+                    "text": self._visual_prompt(),
                 },
                 {
                     "type": "image_url",
@@ -222,6 +273,12 @@ class VisionService:
                 return await self.gemini_describe(src, cfg["gemini_api_key"], cfg["gemini_model"])
             except Exception:
                 pass  # fall through to YOLO
+
+        if cfg["provider"] == "ollama":
+            try:
+                return await self.ollama_describe(src, cfg["ollama_base_url"], cfg["ollama_model"])
+            except Exception as exc:
+                return f"Nao foi possivel analisar a imagem com Ollama Vision ({cfg['ollama_model']}): {exc}"
 
         return self.yolo_describe(
             src,

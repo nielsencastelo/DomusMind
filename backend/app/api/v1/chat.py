@@ -205,6 +205,8 @@ async def test_agent(payload: AgentTestRequest):
             visual_model = (
                 vision_cfg.get("gemini_model")
                 if vision_cfg.get("provider") == "gemini"
+                else vision_cfg.get("ollama_model")
+                if vision_cfg.get("provider") == "ollama"
                 else vision_cfg.get("yolo_weights")
             )
             vision_context = (
