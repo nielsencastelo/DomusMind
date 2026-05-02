@@ -167,8 +167,12 @@ class VisionService:
         return "Na imagem foram detectados: " + ", ".join(parts) + "."
 
     @staticmethod
-    def frame_to_base64(frame: np.ndarray) -> str:
-        _, buffer = cv2.imencode(".jpg", frame)
+    def frame_to_base64(frame: np.ndarray, max_width: int | None = None, quality: int = 85) -> str:
+        if max_width and frame.shape[1] > max_width:
+            ratio = max_width / frame.shape[1]
+            height = max(1, int(frame.shape[0] * ratio))
+            frame = cv2.resize(frame, (max_width, height))
+        _, buffer = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, quality])
         return base64.b64encode(buffer).decode("utf-8")
 
     @staticmethod
@@ -194,8 +198,12 @@ class VisionService:
         if frame is None:
             return "Nao foi possivel capturar imagem da camera."
 
-        image_b64 = self.frame_to_base64(frame)
-        async with httpx.AsyncClient(timeout=120) as client:
+        image_b64 = self.frame_to_base64(
+            frame,
+            max_width=settings.vision_ollama_max_width,
+            quality=settings.vision_ollama_jpeg_quality,
+        )
+        async with httpx.AsyncClient(timeout=settings.vision_ollama_timeout_seconds) as client:
             url = base_url.rstrip("/") + "/api/generate"
             response = await client.post(
                 url,
@@ -286,8 +294,9 @@ class VisionService:
                 return (
                     "Nao foi possivel analisar a imagem com Ollama Vision "
                     f"({cfg['ollama_model']}) em {cfg['ollama_base_url']}: {error}. "
-                    "Verifique se o Ollama esta rodando, se o modelo esta instalado e se "
-                    "o container consegue acessar host.docker.internal:11434."
+                    "Verifique se o Ollama esta rodando, se o modelo esta instalado, se "
+                    "o container consegue acessar host.docker.internal:11434 e se o modelo "
+                    "responde dentro do timeout configurado."
                 )
 
         return self.yolo_describe(

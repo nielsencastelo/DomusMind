@@ -32,9 +32,9 @@ celery_app.conf.update(
             "schedule": 3600.0,
             "options": {"queue": "memory"},
         },
-        "monitor-default-camera-every-10-seconds": {
+        "monitor-default-camera": {
             "task": "app.workers.vision_worker.monitor_default_camera",
-            "schedule": 10.0,
+            "schedule": settings.vision_monitor_interval_seconds,
             "options": {"queue": "vision"},
         },
     },

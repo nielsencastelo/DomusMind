@@ -45,6 +45,10 @@ class Settings(BaseSettings):
     default_camera_source: str = "0"
     yolo_weights: str = "models/yolov8x.pt"
     torch_device: str = "auto"
+    vision_monitor_interval_seconds: float = 300.0
+    vision_ollama_timeout_seconds: float = 300.0
+    vision_ollama_max_width: int = 640
+    vision_ollama_jpeg_quality: int = 70
 
     # ── Audio ─────────────────────────────────────────────────────────────
     audio_sample_rate: int = 16000
