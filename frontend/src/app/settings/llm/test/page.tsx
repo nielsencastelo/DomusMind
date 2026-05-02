@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { MessageSquareText, RefreshCw, Send } from "lucide-react";
 import { api, LlmConfig, ModelInfo, ProviderKey } from "@/lib/api";
 import { llmModelDescription } from "@/lib/modelInfo";
+import { SettingsBackButton } from "@/components/SettingsBackButton";
 
 const providers: ProviderKey[] = ["local", "gemini", "openai", "claude"];
 
@@ -69,6 +70,7 @@ export default function LlmTestPage() {
   return (
     <section className="grid gap-5 lg:grid-cols-[1fr_24rem]">
       <div className="space-y-5">
+        <SettingsBackButton />
         <div>
           <div className="chip mb-3"><MessageSquareText size={14} /> Testar IA</div>
           <h1 className="page-title">Chat de diagnostico</h1>

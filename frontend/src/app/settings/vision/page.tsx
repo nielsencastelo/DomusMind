@@ -5,6 +5,7 @@ import { Bot, Download, Eye, Key, RefreshCw, Save, Sliders } from "lucide-react"
 import { api, VisionConfig, YoloModelInfo } from "@/lib/api";
 import { useI18n } from "@/hooks/useI18n";
 import { yoloModelDescription } from "@/lib/modelInfo";
+import { SettingsBackButton } from "@/components/SettingsBackButton";
 
 export default function VisionSettingsPage() {
   const [config, setConfig] = useState<VisionConfig | null>(null);
@@ -90,6 +91,7 @@ export default function VisionSettingsPage() {
 
   return (
     <section className="max-w-2xl space-y-6">
+      <SettingsBackButton />
       <div>
         <div className="chip mb-3">{t("settings.vision.chip")}</div>
         <h1 className="page-title">{t("settings.vision.title")}</h1>

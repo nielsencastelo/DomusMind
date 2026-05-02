@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Save } from "lucide-react";
 import { api } from "@/lib/api";
+import { SettingsBackButton } from "@/components/SettingsBackButton";
 
 type ConfigEntry = {
   key: string;
@@ -46,6 +47,9 @@ export default function SystemSettingsPage() {
   return (
     <section className="grid gap-5 lg:grid-cols-[1fr_24rem]">
       <div>
+        <div className="mb-5">
+          <SettingsBackButton />
+        </div>
         <h1 className="page-title">Sistema avancado</h1>
         <p className="mt-2 text-sm text-[var(--muted)]">
           Editor direto das chaves em system_config. Use para manutencao fina.

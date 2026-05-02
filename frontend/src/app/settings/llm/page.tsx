@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { Bot, RefreshCw, Save, Server, Sparkles } from "lucide-react";
 import { api, LlmConfig, ModelInfo, ProviderKey } from "@/lib/api";
 import { llmModelDescription } from "@/lib/modelInfo";
+import { SettingsBackButton } from "@/components/SettingsBackButton";
 
 const providers: Array<{ key: ProviderKey; label: string; hint: string }> = [
   { key: "gemini", label: "Gemini", hint: "Google AI Studio / Gemini API" },
@@ -80,6 +81,7 @@ export default function LlmProvidersPage() {
 
   return (
     <section className="space-y-6">
+      <SettingsBackButton />
       <div>
         <div className="chip mb-3"><Bot size={14} /> IA / LLM</div>
         <h1 className="page-title">Provedores e modelos</h1>

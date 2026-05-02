@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Camera, Home, Lightbulb, Plus, RefreshCw } from "lucide-react";
 import { api, Room } from "@/lib/api";
+import { SettingsBackButton } from "@/components/SettingsBackButton";
 
 export default function RoomsSettingsPage() {
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -58,6 +59,9 @@ export default function RoomsSettingsPage() {
   return (
     <section className="grid gap-5 lg:grid-cols-[1fr_24rem]">
       <div>
+        <div className="mb-5">
+          <SettingsBackButton />
+        </div>
         <div className="flex items-end justify-between gap-3">
           <div>
             <h1 className="page-title">Comodos e dispositivos</h1>

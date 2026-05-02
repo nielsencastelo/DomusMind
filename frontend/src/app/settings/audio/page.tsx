@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Mic, Play, Save, Volume2 } from "lucide-react";
 import { api, AudioConfig } from "@/lib/api";
+import { SettingsBackButton } from "@/components/SettingsBackButton";
 
 const defaultConfig: AudioConfig = {
   audio_sample_rate: 16000,
@@ -64,6 +65,7 @@ export default function AudioSettingsPage() {
 
   return (
     <section className="max-w-3xl space-y-6">
+      <SettingsBackButton />
       <div>
         <div className="chip mb-3">
           <Mic size={14} />

@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { BrainCircuit, RefreshCw, Save, SlidersHorizontal } from "lucide-react";
 import { AgentConfig, AgentKey, api, LlmConfig, ModelInfo, ProviderKey } from "@/lib/api";
 import { llmModelDescription } from "@/lib/modelInfo";
+import { SettingsBackButton } from "@/components/SettingsBackButton";
 
 const agents: Array<{ key: AgentKey; label: string; hint: string }> = [
   { key: "geral", label: "Agente geral", hint: "Resposta final e conversa principal." },
@@ -77,6 +78,7 @@ export default function AgentsSettingsPage() {
 
   return (
     <section className="space-y-6">
+      <SettingsBackButton />
       <div>
         <div className="chip mb-3"><BrainCircuit size={14} /> Matriz de agentes</div>
         <h1 className="page-title">Agentes e modelos</h1>

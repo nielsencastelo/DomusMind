@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Database, RefreshCw, Save } from "lucide-react";
 import { api, LlmConfig, ModelInfo } from "@/lib/api";
 import { llmModelDescription } from "@/lib/modelInfo";
+import { SettingsBackButton } from "@/components/SettingsBackButton";
 
 function fallbackConfig(): LlmConfig {
   return {
@@ -61,6 +62,7 @@ export default function EmbeddingsSettingsPage() {
 
   return (
     <section className="max-w-3xl space-y-6">
+      <SettingsBackButton />
       <div>
         <div className="chip mb-3"><Database size={14} /> Embeddings</div>
         <h1 className="page-title">Modelo de embeddings</h1>
