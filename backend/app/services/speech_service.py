@@ -2,7 +2,6 @@ import re
 from pathlib import Path
 
 import numpy as np
-import sounddevice as sd
 import torch
 from TTS.api import TTS
 
@@ -36,6 +35,8 @@ class SpeechService:
         return re.sub(r"\.(\s|$)", r"\1", text)
 
     def speak(self, text: str) -> None:
+        import sounddevice as sd
+
         if not self.speaker_wav.exists():
             raise FileNotFoundError(
                 f"Áudio de referência não encontrado: {self.speaker_wav}"

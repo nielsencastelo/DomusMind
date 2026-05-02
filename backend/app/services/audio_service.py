@@ -1,5 +1,4 @@
 import numpy as np
-import sounddevice as sd
 import torch
 from faster_whisper import WhisperModel
 
@@ -58,6 +57,8 @@ class AudioService:
         threshold: float = 0.005,
         language: str = "pt",
     ) -> str:
+        import sounddevice as sd
+
         chunk_duration = 0.2
         chunk_samples = int(self.sample_rate * chunk_duration)
         max_chunks = int(max_duration / chunk_duration)
